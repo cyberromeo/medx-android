@@ -1,0 +1,45 @@
+name: Screenshots
+
+# Renders the real screens with sample data (Robolectric + Roborazzi, see
+# app/src/test/java/quest/srihari/medxelite/screenshots) and uploads the PNGs.
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/src/**'
+      - 'app/build.gradle.kts'
+      - '.github/workflows/screenshots.yml'
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0 platform-tools'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Render screenshots
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon :app:testDebugUnitTest --tests '*ScreenshotTest*'
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: medx-elite-screenshots
+          path: app/build/outputs/roborazzi/*.png
+          if-no-files-found: warn
