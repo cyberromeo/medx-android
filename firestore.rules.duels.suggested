@@ -1,0 +1,130 @@
+// SUGGESTED Firestore rules for MedX Duels — NOT deployed.
+//
+// The live project currently lets any signed-in user read/write, which is why Duels works today.
+// Merge these `match` blocks into the project's real rules (inside
+// `service cloud.firestore { match /databases/{database}/documents { ... } }`) when you lock it down.
+// Test them in the Firestore Rules Playground / emulator first: the existing Faceoff collections
+// (medx_duels, medx_duel_players) are shared with the iOS app, so the medx_duels block below keeps
+// Faceoff's shape working (doc id = room code, `uid` = host).
+//
+// Model (see DUELS.md):
+//   publicProfiles/{uid}              searchable profile; owner writes, signed-in users read
+//   medx_duel_stats/{uid}             rating + W/L/D; owner writes, signed-in users read
+//   medx_duel_invites/{inviteId}      sender creates/cancels; recipient accepts/declines
+//   medx_duel_queue/{uid}             quick-match entry; owner writes; another player may only claim it
+//   medx_duels/{code}                 the match; host creates; guest may take the empty seat; players advance it
+//   medx_duels/{code}/deck/{part}     written once by the host
+//   medx_duel_players/{code}__{uid}   each player writes only their own row
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+    // ---------------------------------------------------------------- profiles
+    match /publicProfiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && uid == me()
+        && request.resource.data.uid == me()
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 80
+        // Never a plain email in a public doc: only the SHA-256 used for exact-match lookup.
+        && !('email' in request.resource.data)
+        && (!('emailHash' in request.resource.data) || request.resource.data.emailHash.size() == 64)
+        && request.resource.data.searchKeys.size() <= 120;
+      allow delete: if signedIn() && uid == me();
+    }
+
+    // ---------------------------------------------------------------- stats
+    match /medx_duel_stats/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && uid == me() && request.resource.data.uid == me();
+      // NOTE: a client can still write any rating for itself. Tamper-proof ratings need a
+      // Cloud Function that applies medx_duels/{code}.result on status -> "done".
+    }
+
+    // ---------------------------------------------------------------- invites
+    match /medx_duel_invites/{inviteId} {
+      allow read: if signedIn() && me() in [resource.data.fromUid, resource.data.toUid];
+      allow create: if signedIn()
+        && request.resource.data.fromUid == me()
+        && request.resource.data.toUid != me()           // no self-invites
+        && request.resource.data.status == 'pending'
+        && request.resource.data.id == inviteId
+        && request.resource.data.expiresAt <= request.time.toMillis() + 15 * 60 * 1000;
+      // Recipient: pending -> accepted | declined (accept only before expiry).
+      allow update: if signedIn() && resource.data.toUid == me()
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['accepted', 'declined']
+        && (request.resource.data.status == 'declined' || request.time.toMillis() < resource.data.expiresAt)
+        && changed().hasOnly(['status', 'respondedAt', 'updatedAt']);
+      // Sender: pending -> cancelled | expired.
+      allow update: if signedIn() && resource.data.fromUid == me()
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['cancelled', 'expired']
+        && changed().hasOnly(['status', 'respondedAt', 'updatedAt']);
+      allow delete: if signedIn() && resource.data.fromUid == me();
+    }
+
+    // ---------------------------------------------------------------- quick-match queue
+    match /medx_duel_queue/{uid} {
+      allow read: if signedIn();
+      allow create, delete: if signedIn() && uid == me();
+      allow update: if signedIn() && (
+        uid == me()
+        // Another player may only claim a waiting entry, naming themselves.
+        || (resource.data.status == 'waiting'
+            && request.resource.data.status == 'matched'
+            && request.resource.data.matchedBy == me()
+            && changed().hasOnly(['status', 'matchedBy', 'matchedAt']))
+      );
+    }
+
+    // ---------------------------------------------------------------- matches (Faceoff + Duels)
+    match /medx_duels/{code} {
+      function isDuel() { return resource.data.get('format', '') == 'duel'; }
+      function players() { return [resource.data.uid, resource.data.get('guestUid', '')]; }
+
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == me();
+
+      // Faceoff (no `format`): host-owned, as before.
+      allow update: if signedIn() && !isDuel() && resource.data.uid == me();
+
+      // Duels: the empty guest seat may be taken by anyone signed in (join by code / invite / queue).
+      allow update: if signedIn() && isDuel()
+        && resource.data.status == 'lobby'
+        && resource.data.get('guestUid', null) == null
+        && request.resource.data.guestUid == me()
+        && request.resource.data.uid == resource.data.uid
+        && changed().hasOnly(['guestUid', 'guestProfile', 'participants', 'names', 'photos', 'ratings', 'played', 'updatedAt', 'updatedAtMs']);
+
+      // Duels: either player moves the match on (start, next question, finish, close lobby).
+      allow update: if signedIn() && isDuel()
+        && me() in players()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.get('guestUid', null) == resource.data.get('guestUid', null)
+        && changed().hasOnly(['status', 'qIndex', 'askedAt', 'result', 'finishedAt', 'finishedAtMs', 'updatedAt', 'updatedAtMs'])
+        && resource.data.status in ['lobby', 'live'];
+
+      allow delete: if false;
+
+      match /deck/{part} {
+        allow read: if signedIn();
+        allow write: if signedIn() && get(/databases/$(database)/documents/medx_duels/$(code)).data.uid == me();
+      }
+    }
+
+    match /medx_duel_players/{rowId} {
+      allow read: if signedIn();
+      // Row id is `{code}__{uid}`: you can only ever write your own row.
+      allow create, update: if signedIn()
+        && request.resource.data.uid == me()
+        && rowId == request.resource.data.gameId + '__' + me();
+      allow delete: if false;
+    }
+  }
+}

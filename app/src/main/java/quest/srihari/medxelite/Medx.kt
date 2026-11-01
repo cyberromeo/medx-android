@@ -15,6 +15,8 @@ import quest.srihari.medxelite.data.CustomModuleStore
 import quest.srihari.medxelite.data.DiskCache
 import quest.srihari.medxelite.data.Firestore
 import quest.srihari.medxelite.data.Prefs
+import quest.srihari.medxelite.duel.DuelCenter
+import quest.srihari.medxelite.duel.DuelRepo
 
 /** The app's singletons (AppState / AuthService / FirestoreService / *Store .shared on iOS). */
 object Medx {
@@ -44,6 +46,7 @@ object Medx {
         activity = ActivityStore(app, fs, uid)
         custom = CustomModuleStore(app, fs, uid)
         auth.onSignedOut = {
+            DuelCenter.reset()
             attempts.reset()
             activity.reset()
             custom.reset()
@@ -59,5 +62,7 @@ object Medx {
         scope.launch { attempts.refresh() }
         scope.launch { activity.sync() }
         scope.launch { custom.refresh() }
+        // Searchable public profile for duel invites (name + photo, email only as a hash).
+        scope.launch { runCatching { DuelRepo.upsertMyProfile() } }
     }
 }

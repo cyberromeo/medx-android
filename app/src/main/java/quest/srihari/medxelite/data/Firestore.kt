@@ -336,6 +336,145 @@ class Firestore(private val cache: DiskCache, private val tokenProvider: suspend
         return out
     }
 
+    // ---------------------------------------------------------------- transactions + commits
+    // Used by Duels: compare-and-set writes (preconditions on updateTime) and multi-document
+    // transactions over plain REST, so two phones writing at once can never both "win".
+
+    data class RawDoc(val collection: String, val id: String, val fields: JsonObject, val updateTime: String?)
+
+    sealed interface Precondition {
+        data class Exists(val exists: Boolean) : Precondition
+        data class UpdatedAt(val updateTime: String) : Precondition
+    }
+
+    sealed interface Write {
+        /** [mask] null = replace the whole document; otherwise only these field paths (segment lists). */
+        data class Update(
+            val collection: String,
+            val docId: String,
+            val fields: JsonObject,
+            val mask: List<List<String>>? = null,
+            val precondition: Precondition? = null,
+        ) : Write
+        data class Delete(val collection: String, val docId: String, val precondition: Precondition? = null) : Write
+    }
+
+    class TxAborted(message: String) : IOException(message)
+    class PreconditionFailed(message: String) : IOException(message)
+
+    private fun preconditionJson(p: Precondition?): JsonObject? = when (p) {
+        null -> null
+        is Precondition.Exists -> jsonOf("exists" to p.exists)
+        is Precondition.UpdatedAt -> jsonOf("updateTime" to p.updateTime)
+    }
+
+    private fun writeJson(w: Write): JsonObject = when (w) {
+        is Write.Update -> {
+            val m = mutableMapOf<String, JsonElement>(
+                "update" to jsonOf("name" to "${Config.FIRESTORE_DOC_PREFIX}/${w.collection}/${w.docId}", "fields" to toFields(w.fields)),
+            )
+            w.mask?.let { mask -> m["updateMask"] = jsonOf("fieldPaths" to mask.map { fieldPath(it) }) }
+            preconditionJson(w.precondition)?.let { m["currentDocument"] = it }
+            JsonObject(m)
+        }
+        is Write.Delete -> {
+            val m = mutableMapOf<String, JsonElement>("delete" to JsonPrimitive("${Config.FIRESTORE_DOC_PREFIX}/${w.collection}/${w.docId}"))
+            preconditionJson(w.precondition)?.let { m["currentDocument"] = it }
+            JsonObject(m)
+        }
+    }
+
+    private fun rawFrom(found: JsonObject): RawDoc? {
+        val name = found.str("name") ?: return null
+        val rel = name.substringAfter("/documents/")
+        val col = rel.substringBeforeLast("/")
+        return RawDoc(col, rel.substringAfterLast("/"), normalizeMap(found.obj("fields") ?: JsonObject(emptyMap())), found.str("updateTime"))
+    }
+
+    /** Documents with their updateTime (for compare-and-set). Keyed by "collection/id". */
+    suspend fun getRaw(paths: List<Pair<String, String>>, transaction: String? = null): Map<String, RawDoc> {
+        if (paths.isEmpty()) return emptyMap()
+        val names = paths.map { (c, d) -> "${Config.FIRESTORE_DOC_PREFIX}/$c/$d" }
+        val body = if (transaction != null) jsonOf("documents" to names, "transaction" to transaction) else jsonOf("documents" to names)
+        val text = Http.call("POST", "${Config.FIRESTORE_BASE}:batchGet", token(), body)
+        val out = mutableMapOf<String, RawDoc>()
+        MedxJson.parseToJsonElement(text).jsonArray.forEach { r ->
+            val found = (r as? JsonObject)?.obj("found") ?: return@forEach
+            rawFrom(found)?.let { out["${it.collection}/${it.id}"] = it }
+        }
+        return out
+    }
+
+    suspend fun getRaw(collection: String, docId: String): RawDoc? = getRaw(listOf(collection to docId))["$collection/$docId"]
+
+    suspend fun beginTransaction(): String {
+        val text = Http.call("POST", "${Config.FIRESTORE_BASE}:beginTransaction", token(), jsonOf("options" to jsonOf("readWrite" to JsonObject(emptyMap()))))
+        return MedxJson.parseToJsonElement(text).jsonObject.str("transaction") ?: throw IOException("no transaction id")
+    }
+
+    suspend fun rollback(transaction: String) {
+        runCatching { Http.call("POST", "${Config.FIRESTORE_BASE}:rollback", token(), jsonOf("transaction" to transaction)) }
+    }
+
+    /** Atomic commit. Returns the server commit time (also feeds [ServerClock]). */
+    suspend fun commit(writes: List<Write>, transaction: String? = null): String? {
+        val body = mutableMapOf<String, JsonElement>("writes" to JsonArray(writes.map { writeJson(it) }))
+        if (transaction != null) body["transaction"] = JsonPrimitive(transaction)
+        val sent = System.currentTimeMillis()
+        val text = try {
+            Http.call("POST", "${Config.FIRESTORE_BASE}:commit", token(), JsonObject(body))
+        } catch (e: HttpException) {
+            val status = runCatching { MedxJson.parseToJsonElement(e.body).jsonObject.obj("error")?.str("status") }.getOrNull() ?: ""
+            when {
+                e.code == 409 || status == "ABORTED" -> throw TxAborted(status.ifEmpty { "ABORTED" })
+                status == "FAILED_PRECONDITION" || status == "NOT_FOUND" -> throw PreconditionFailed(status)
+                else -> throw e
+            }
+        }
+        val got = System.currentTimeMillis()
+        val commitTime = runCatching { MedxJson.parseToJsonElement(text).jsonObject.str("commitTime") }.getOrNull()
+        commitTime?.let { MedxDates.parse(it)?.toEpochMilli() }?.let { ServerClock.observe(it, sent, got) }
+        return commitTime
+    }
+
+    /** Reads inside [Tx] see one snapshot; the commit fails (and the block re-runs) if any of them changed. */
+    inner class Tx internal constructor(val id: String) {
+        internal val writes = mutableListOf<Write>()
+        suspend fun get(collection: String, docId: String): RawDoc? = getRaw(listOf(collection to docId), id)["$collection/$docId"]
+        suspend fun getAll(paths: List<Pair<String, String>>): Map<String, RawDoc> = getRaw(paths, id)
+        fun set(collection: String, docId: String, fields: JsonObject) { writes += Write.Update(collection, docId, fields) }
+        fun merge(collection: String, docId: String, fields: JsonObject) {
+            writes += Write.Update(collection, docId, fields, mask = fields.keys.map { listOf(it) })
+        }
+        fun delete(collection: String, docId: String) { writes += Write.Delete(collection, docId) }
+        fun add(write: Write) { writes += write }
+    }
+
+    suspend fun <T> runTransaction(attempts: Int = 5, block: suspend (Tx) -> T): T {
+        var last: Exception? = null
+        repeat(attempts) { n ->
+            val tx = Tx(beginTransaction())
+            try {
+                val value = block(tx)
+                commit(tx.writes, tx.id)
+                return value
+            } catch (e: TxAborted) {
+                last = e
+                kotlinx.coroutines.delay(120L * (n + 1) + (0..120).random())
+            } catch (e: Exception) {
+                rollback(tx.id)
+                throw e
+            }
+        }
+        throw last ?: TxAborted("transaction did not commit")
+    }
+
+    /** Any structured query; documents come back normalised with `id` injected. */
+    suspend fun query(structuredQuery: JsonObject): List<JsonObject> {
+        val text = Http.call("POST", "${Config.FIRESTORE_BASE}:runQuery", token(), jsonOf("structuredQuery" to structuredQuery))
+        return MedxJson.parseToJsonElement(text).jsonArray.mapNotNull { (it as? JsonObject)?.obj("document") }.mapNotNull { decodeDocument(it) }
+    }
+
     // ---------------------------------------------------------------- domain
 
     suspend fun fetchAriseSubjects(): List<BankSubject> =

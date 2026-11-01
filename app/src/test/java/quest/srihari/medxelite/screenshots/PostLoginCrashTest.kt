@@ -141,6 +141,21 @@ class PostLoginCrashTest {
         settle()
     }
 
+    /** Library ▸ Duels as a brand-new user: empty stats, no history, offline reads failing. */
+    @Test fun emptyUser_opensDuelsHub() {
+        installEmpty(Load.Loading)
+        quest.srihari.medxelite.ui.duel.DuelUiFlags.askNotificationPermission = false
+        quest.srihari.medxelite.duel.DuelCenter.reset()
+        renderApp()
+        compose.onAllNodesWithText("Library").onFirst().performClick()
+        settle()
+        compose.onAllNodesWithText("Duels").onFirst().performClick()
+        settle()
+        compose.onAllNodesWithText("Quick match").onFirst().assertExists()
+        compose.onAllNodesWithText("Challenge a friend").onFirst().performClick()
+        settle()
+    }
+
     @Test fun demoUser_motionOn_allTabs() {
         DemoData.install(true)
         renderApp()

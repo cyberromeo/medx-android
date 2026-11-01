@@ -69,6 +69,23 @@ for t in QBank Tests Classes Library Home; do
   adb exec-out screencap -p > "$OUT/$i-$t.png"; i=$((i+1))
   alive && echo "ALIVE after $t" || echo "DEAD after $t"
 done
+# Duels: Library > Duels hub, the challenge sheet, quick match (fails offline -> error state), then a deep link.
+dismiss_anr
+tap_text "Library"; sleep 4
+tap_text "Duels"; sleep 6
+adb exec-out screencap -p > "$OUT/$i-duels-hub.png"; i=$((i+1))
+alive && echo "ALIVE after Duels hub" || echo "DEAD after Duels hub"
+tap_text "Challenge a friend"; sleep 4
+adb exec-out screencap -p > "$OUT/$i-duels-sheet.png"; i=$((i+1))
+adb shell input keyevent KEYCODE_BACK; sleep 2
+tap_text "Quick match"; sleep 8
+adb exec-out screencap -p > "$OUT/$i-duels-quick.png"; i=$((i+1))
+alive && echo "ALIVE after Quick match" || echo "DEAD after Quick match"
+adb shell input keyevent KEYCODE_BACK; sleep 2
+adb shell am start -W -a android.intent.action.VIEW -d "medx://duel/ABC234" $PKG
+sleep 6
+adb exec-out screencap -p > "$OUT/$i-duels-deeplink.png"; i=$((i+1))
+alive && echo "ALIVE after duel deep link" || echo "DEAD after duel deep link"
 # Settings via the avatar is not labelled; open it by route-free means: skip.
 
 adb logcat -d > "$OUT/logcat.txt"

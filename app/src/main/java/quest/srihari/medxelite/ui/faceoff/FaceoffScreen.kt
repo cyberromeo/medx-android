@@ -86,7 +86,7 @@ import quest.srihari.medxelite.ui.theme.Mx
 
 /** Faceoff lobby: create a room (pick a paper and a length) or join one by code. */
 @Composable
-fun FaceoffScreen(nav: Navigator) {
+fun FaceoffScreen(nav: Navigator, initialCode: String? = null) {
     var roomId by rememberSaveable { mutableStateOf<String?>(null) }
     val id = roomId
     if (id != null) {
@@ -94,7 +94,7 @@ fun FaceoffScreen(nav: Navigator) {
         return
     }
     val series by Catalog.series.collectAsState()
-    var code by rememberSaveable { mutableStateOf("") }
+    var code by rememberSaveable { mutableStateOf(initialCode ?: "") }
     var length by rememberSaveable { mutableStateOf(10) }
     var pick by remember { mutableStateOf<SeriesPaper?>(null) }
     var busy by remember { mutableStateOf<String?>(null) }
@@ -109,6 +109,8 @@ fun FaceoffScreen(nav: Navigator) {
         scope.launch {
             try {
                 val doc = Medx.fs.fetchDocument(DuelPath.GAMES, c, useCache = false)
+                // A Duels room (format "duel") opens in the Duels screen instead.
+                if (doc?.get("format")?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.content } == "duel") { nav.go("duel/$c"); return@launch }
                 val game = doc?.let { DuelGame.from(c, it) }
                 when {
                     game == null -> error = "No room with code $c."
@@ -129,6 +131,8 @@ fun FaceoffScreen(nav: Navigator) {
             }
         }
     }
+
+    LaunchedEffect(initialCode) { if (!initialCode.isNullOrBlank()) join() }
 
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar("Faceoff", onBack = nav::back) }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {

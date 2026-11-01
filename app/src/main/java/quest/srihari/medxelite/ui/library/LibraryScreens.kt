@@ -107,7 +107,7 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
         Feature("Bookmarks", if (bookmarks.isEmpty()) "None saved yet" else "${bookmarks.size} saved", Icons.Filled.Bookmark, Hues.orange, "bookmarks"),
         Feature("Batch papers", "ARISE tests", Icons.Filled.Description, Hues.teal, "batch"),
         Feature("VOD feed", "Newest recordings", Icons.Filled.VideoLibrary, Hues.pink, "vod"),
-        Feature("Faceoff", "Duel a friend", Icons.Filled.Bolt, Hues.yellow, "faceoff"),
+        Feature("Duels", "Challenge a friend 1v1", Icons.Filled.Bolt, Hues.yellow, "duels"),
         Feature("Watch history", "${history.size} class${if (history.size == 1) "" else "es"}", Icons.Filled.History, Hues.green, "history"),
         Feature("Activity log", "${attempts.size} sitting${if (attempts.size == 1) "" else "s"}", Icons.Filled.ListAlt, Hues.gray, "activity"),
     )

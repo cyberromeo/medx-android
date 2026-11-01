@@ -40,11 +40,29 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import quest.srihari.medxelite.Medx
 import quest.srihari.medxelite.data.RecordedVideo
 import quest.srihari.medxelite.data.RunnerPayload
 import quest.srihari.medxelite.ui.custom.CustomModuleEditor
 import quest.srihari.medxelite.ui.custom.CustomModulesScreen
 import quest.srihari.medxelite.ui.faceoff.FaceoffScreen
+import quest.srihari.medxelite.ui.duel.DuelHubScreen
+import quest.srihari.medxelite.ui.duel.DuelMatchScreen
+import quest.srihari.medxelite.ui.duel.InvitePrompt
+import quest.srihari.medxelite.ui.duel.QuickMatchScreen
+import quest.srihari.medxelite.ui.duel.RejoinPill
+import quest.srihari.medxelite.duel.DuelCenter
+import quest.srihari.medxelite.duel.DuelError
+import quest.srihari.medxelite.duel.DuelRepo
+import quest.srihari.medxelite.duel.MatchStatus
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
+import androidx.navigation.compose.currentBackStackEntryAsState
+import kotlinx.coroutines.launch
 import quest.srihari.medxelite.ui.flashcards.FlashcardDeckScreen
 import quest.srihari.medxelite.ui.flashcards.FlashcardsScreen
 import quest.srihari.medxelite.ui.home.HomeScreen
@@ -109,6 +127,28 @@ fun AppRoot() {
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
     val reduce = Mx.reduceMotion
 
+    val prompt by DuelCenter.prompt.collectAsState()
+    val openRoom by DuelCenter.openRoom.collectAsState()
+    val pendingCode by DuelCenter.pendingCode.collectAsState()
+    val inMatch by DuelCenter.inMatch.collectAsState()
+    val active by DuelCenter.active.collectAsState()
+    val route = nav.currentBackStackEntryAsState().value?.destination?.route
+    // An accepted invite / notification tap / deep link opens the room from anywhere.
+    LaunchedEffect(openRoom) { openRoom?.let { DuelCenter.openRoom.value = null; if (inMatch != it) nav.navigate("duel/$it") { launchSingleTop = true } } }
+    LaunchedEffect(pendingCode) {
+        val code = pendingCode ?: return@LaunchedEffect
+        DuelCenter.pendingCode.value = null
+        try {
+            when (val r = DuelRepo.joinByCode(code)) {
+                is DuelRepo.JoinResult.Duel -> nav.navigate("duel/${r.code}") { launchSingleTop = true }
+                is DuelRepo.JoinResult.Legacy -> nav.navigate("faceoff?code=${r.code}")
+            }
+        } catch (e: Exception) {
+            nav.navigate("duels") { launchSingleTop = true }
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
     NavHost(
         navController = nav,
         startDestination = "tabs",
@@ -171,6 +211,24 @@ fun AppRoot() {
         composable("search") { SearchScreen(navigator) }
         composable("settings") { SettingsScreen(navigator) }
         composable("tracker") { SyllabusTrackerScreen(navigator) }
-        composable("faceoff") { FaceoffScreen(navigator) }
+        composable("faceoff?code={code}", arguments = listOf(androidx.navigation.navArgument("code") { type = androidx.navigation.NavType.StringType; nullable = true; defaultValue = null })) { e -> FaceoffScreen(navigator, e.arguments?.getString("code")) }
+        composable("duels") { DuelHubScreen(navigator) }
+        composable("duels/quick") { QuickMatchScreen(navigator) }
+        composable("duel/{code}") { e -> DuelMatchScreen(navigator, e.arguments?.getString("code") ?: "") }
+    }
+
+    // A duel still running (e.g. after leaving the room or restarting the app): one tap to rejoin.
+    val running = active.firstOrNull { it.status == MatchStatus.LIVE && it.uids.size == 2 }
+    if (route == "tabs" && running != null && inMatch == null) {
+        val me = Medx.auth.uid ?: ""
+        RejoinPill(
+            running.nameOf(running.opponentOf(me)), true, { nav.navigate("duel/${running.code}") { launchSingleTop = true } },
+            Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 92.dp),
+        )
+    }
+    // Incoming invite: shown over any screen except a live match.
+    prompt?.let { inv ->
+        if (inMatch == null) InvitePrompt(inv, onOpenRoom = { nav.navigate("duel/$it") { launchSingleTop = true } }, onDismiss = DuelCenter::consumePrompt)
+    }
     }
 }

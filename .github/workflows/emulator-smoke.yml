@@ -6,7 +6,7 @@ name: Emulator smoke (post sign-in)
 on:
   workflow_dispatch:
   push:
-    branches: [ main, redesign-v3 ]
+    branches: [ main, redesign-v3, feature-duels ]
     paths:
       - 'app/src/**'
       - 'app/build.gradle.kts'
