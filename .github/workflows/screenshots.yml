@@ -31,6 +31,18 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Post-login regression tests (empty user, motion on)
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon :app:testDebugUnitTest --tests '*CacheOnlyTest*' --tests '*PostLoginCrashTest*'
+
+      - name: Upload post-login test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-login-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+
       - name: Render screenshots
         run: |
           chmod +x ./gradlew

@@ -1,6 +1,8 @@
 package quest.srihari.medxelite
 
 import android.content.Context
+import android.util.Log
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,7 +26,10 @@ object Medx {
     lateinit var activity: ActivityStore; private set
     lateinit var custom: CustomModuleStore; private set
 
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    /** Background syncs must never take the app down: a failure is logged and the UI keeps its local copy. */
+    private val logErrors = CoroutineExceptionHandler { _, e -> Log.e("Medx", "Background sync failed", e) }
+
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + logErrors)
 
     fun init(context: Context) {
         if (::auth.isInitialized) return

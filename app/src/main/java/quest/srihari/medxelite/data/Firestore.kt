@@ -179,9 +179,17 @@ class Firestore(private val cache: DiskCache, private val tokenProvider: suspend
      * old, and a miss throws instead of going to the network — the Kotlin twin of iOS
      * `MedxReadPolicy.cachedFirst`, scoped to the coroutine rather than global.
      */
-    object CacheOnly : AbstractCoroutineContextElement(CacheOnly), CoroutineContext.Key<CacheOnly>
+    object CacheOnly : CoroutineContext.Element {
+        // The key is a separate object read through a getter. Passing the object itself to
+        // AbstractCoroutineContextElement(CacheOnly) read it while it was still being created,
+        // so the key was null and the first Firestore read after sign-in crashed the app with
+        // ExceptionInInitializerError (an Error, so no catch (e: Exception) stopped it).
+        override val key: CoroutineContext.Key<*> get() = CacheOnlyKey
+    }
 
-    private suspend fun cacheOnly(): Boolean = coroutineContext[CacheOnly] != null
+    internal object CacheOnlyKey : CoroutineContext.Key<CacheOnly>
+
+    private suspend fun cacheOnly(): Boolean = coroutineContext[CacheOnlyKey] != null
 
     private suspend fun mayServeCached(key: String, maxAge: Long, sinceLaunch: Boolean = true) =
         cacheOnly() || cache.isFresh(key, maxAge, sinceLaunch)
