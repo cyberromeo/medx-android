@@ -73,6 +73,9 @@ fun HtmlText(
             s.subSequence(0, end)
         }
     }
+    val hasLinks = remember(spanned) {
+        spanned is android.text.Spanned && spanned.getSpans(0, spanned.length, android.text.style.URLSpan::class.java).isNotEmpty()
+    }
     val argb = color.toArgb()
     val linkColor = MaterialTheme.colorScheme.primary.toArgb()
     Column(modifier) {
@@ -80,7 +83,16 @@ fun HtmlText(
             AndroidView(
                 factory = { ctx ->
                     TextView(ctx).apply {
-                        movementMethod = LinkMovementMethod.getInstance()
+                        // Only take touches when there is a link to follow. A TextView with a
+                        // movement method is clickable and swallows taps, which made the text of
+                        // an answer option (most of the row) dead to taps in the quiz runner.
+                        if (hasLinks) {
+                            movementMethod = LinkMovementMethod.getInstance()
+                        } else {
+                            isClickable = false
+                            isLongClickable = false
+                            isFocusable = false
+                        }
                         setLineSpacing(0f, 1.15f)
                     }
                 },

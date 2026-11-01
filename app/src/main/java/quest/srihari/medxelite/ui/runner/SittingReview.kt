@@ -182,7 +182,7 @@ fun SittingReview(
                         }
                     }
                     if (!open) {
-                        Text(RichHtml.plain(q.displayText), maxLines = 2, color = Mx.colors.secondaryText, style = MaterialTheme.typography.bodyMedium)
+                        Text(RichHtml.plain(q.displayText), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = Mx.colors.secondaryText, style = MaterialTheme.typography.bodyMedium)
                     }
                     AnimatedVisibility(open) {
                         Column {

@@ -16,6 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.ConscryptMode
 import org.robolectric.annotation.GraphicsMode
 import quest.srihari.medxelite.Medx
 import quest.srihari.medxelite.data.MedxAccent
@@ -44,6 +45,7 @@ import java.net.URI
  */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
+@ConscryptMode(ConscryptMode.Mode.OFF)
 @Config(sdk = [34], qualifiers = RobolectricDeviceQualifiers.Pixel7, application = Application::class)
 class ScreenshotTest {
     @get:Rule val compose = createComposeRule()
@@ -108,6 +110,8 @@ class ScreenshotTest {
                 compose.waitForIdle()
             }
         }
+        compose.onNodeWithText("Question 4 of 10").assertExists() // the taps on options must land
+        compose.onNodeWithText("Explanation").assertExists()
         compose.onRoot().captureRoboImage(out("05-quiz-runner"))
     }
 
@@ -119,6 +123,11 @@ class ScreenshotTest {
                 elapsedSeconds = 7 * 60 + 42, sections = emptyList(), tags = null, onDone = {},
             )
         }
+        // Show the wrong answers and open the first one, so the review's answer key is visible.
+        compose.onNodeWithText("Wrong (2)").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Q4").performClick()
+        compose.waitForIdle()
         compose.onRoot().captureRoboImage(out("06-review"))
     }
 
