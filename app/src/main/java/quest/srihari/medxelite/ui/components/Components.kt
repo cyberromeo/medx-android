@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -636,15 +637,20 @@ fun MedxTopBar(
         }
     }
     if (large) {
-        LargeTopAppBar(
-            title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.headlineLarge) },
-            navigationIcon = nav, actions = actions,
-            colors = TopAppBarDefaults.largeTopAppBarColors(
-                containerColor = c.groupedBackground, scrolledContainerColor = c.groupedBackground,
-                titleContentColor = c.ink, navigationIconContentColor = c.ink, actionIconContentColor = c.ink,
-            ),
-            scrollBehavior = scrollBehavior,
-        )
+        // Tab header: same size and position on every tab (and the same rhythm as Home's greeting),
+        // with no empty collapsing band above the title.
+        Row(
+            Modifier.fillMaxWidth().background(c.groupedBackground).statusBarsPadding()
+                .padding(start = Space.margin, end = 8.dp, top = 14.dp, bottom = 6.dp)
+                .heightIn(min = 56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (onBack != null) { nav(); Spacer(Modifier.width(4.dp)) }
+            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.headlineLarge, color = c.ink, modifier = Modifier.weight(1f))
+            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides c.ink) {
+                Row(verticalAlignment = Alignment.CenterVertically, content = actions)
+            }
+        }
     } else {
         TopAppBar(
             title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleLarge) },
