@@ -1,5 +1,8 @@
 package quest.srihari.medxelite.ui.tests
 
+import quest.srihari.medxelite.ui.qbank.OverviewStrip
+import quest.srihari.medxelite.ui.components.SegmentedTabs
+import quest.srihari.medxelite.ui.components.Pill
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -98,19 +101,16 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     }
                     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
-                            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                SeriesGroup.entries.forEachIndexed { i, g ->
-                                    SegmentedButton(group == g, { group = g }, SegmentedButtonDefaults.itemShape(i, SeriesGroup.entries.size)) {
-                                        Text("${g.label} (${s.value.count { it.group == g }})")
-                                    }
-                                }
-                            }
+                            SegmentedTabs(
+                                SeriesGroup.entries.map { g -> g.label },
+                                SeriesGroup.entries.indexOf(group),
+                                Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                            ) { i -> group = SeriesGroup.entries[i] }
                         }
                         item {
-                            Text(
-                                "MARROW FMGE TEST SERIES · ${s.value.size} papers · ${"%,d".format(s.value.sumOf { it.questions })} questions",
-                                style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                            OverviewStrip(
+                                "Marrow FMGE test series",
+                                listOf("${papers.size}" to "in this group", "${s.value.size}" to "all papers", "%,d".format(s.value.sumOf { it.questions }) to "questions"),
                             )
                         }
                         if (papers.isEmpty()) item { EmptyState("Nothing here yet", "No papers in this group.") }
@@ -121,7 +121,8 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                                         val best = bySource[p.id]?.maxByOrNull { it.score }
                                         MedxRow(
                                             title = p.title,
-                                            subtitle = p.line + (best?.let { " · best ${it.score}/${it.total}" } ?: ""),
+                                            subtitle = p.line,
+                                            trailingContent = { best?.let { Pill("${it.score}/${it.total}", Mx.colors.correct) } },
                                             icon = when (p.group) {
                                                 SeriesGroup.GRAND -> Icons.Filled.EmojiEvents
                                                 SeriesGroup.MINI -> Icons.Filled.Bolt

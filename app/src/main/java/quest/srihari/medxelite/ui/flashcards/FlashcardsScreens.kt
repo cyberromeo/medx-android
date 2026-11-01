@@ -1,5 +1,9 @@
 package quest.srihari.medxelite.ui.flashcards
 
+import quest.srihari.medxelite.ui.qbank.OverviewStrip
+import quest.srihari.medxelite.ui.components.softShadow
+import quest.srihari.medxelite.ui.components.tappable
+import androidx.compose.foundation.layout.statusBarsPadding
 import android.content.res.Configuration
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -73,8 +77,9 @@ fun FlashcardsScreen(nav: Navigator) {
                 is Load.Loading -> LoadingState("Loading flashcards")
                 is Load.Failed -> EmptyState("Couldn't load flashcards", s.message, actionTitle = "Try again") { scope.launch { Catalog.loadFlashcards(true) } }
                 is Load.Ready -> androidx.compose.foundation.lazy.LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+                    item { OverviewStrip("Image flashcards", listOf("${s.value.size}" to "subjects", "%,d".format(s.value.sumOf { it.cardCount }) to "cards")) }
                     item {
-                        GroupedSection("${s.value.size} subjects · ${s.value.sumOf { it.cardCount }} cards") {
+                        GroupedSection("Subjects") {
                             s.value.forEachIndexed { i, sub ->
                                 MedxRow(
                                     sub.name, "${sub.cardCount} cards", leading = { SubjectBadge(sub.name) },
@@ -112,23 +117,23 @@ fun FlashcardDeckScreen(nav: Navigator, subjectId: Int) {
         }
         LazyVerticalGrid(
             columns = GridCells.Adaptive(150.dp),
-            contentPadding = PaddingValues(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(pad),
         ) {
             itemsIndexed(subject.cards, key = { i, c -> "${c.id}-$i" }) { i, card ->
                 Column(
-                    Modifier.clip(RoundedCornerShape(14.dp)).background(Mx.colors.card).clickable { openAt = i },
+                    Modifier.softShadow(RoundedCornerShape(20.dp), 6.dp).clip(RoundedCornerShape(20.dp)).background(Mx.colors.card).tappable { openAt = i },
                 ) {
                     AsyncImage(
                         card.imageUrl(landscape = false, tablet = tablet), card.name,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(Mx.colors.separator),
+                        modifier = Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(Mx.colors.sunken),
                     )
                     Text(
-                        "${i + 1}. ${card.name}", style = MaterialTheme.typography.labelMedium, maxLines = 2,
-                        modifier = Modifier.padding(8.dp), fontWeight = FontWeight.Medium,
+                        "${i + 1}. ${card.name}", style = MaterialTheme.typography.labelLarge, maxLines = 2, color = Mx.colors.ink,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                     )
                 }
             }
@@ -157,7 +162,7 @@ private fun DeckPager(cards: List<FlashcardCard>, start: Int, landscape: Boolean
         }
         if (chrome) {
             Row(
-                Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.4f)).padding(top = 28.dp, start = 8.dp, end = 16.dp, bottom = 8.dp),
+                Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent))).statusBarsPadding().padding(start = 8.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onClose) { Icon(Icons.Filled.Close, "Close", tint = Color.White) }
@@ -165,7 +170,7 @@ private fun DeckPager(cards: List<FlashcardCard>, start: Int, landscape: Boolean
                     Text(cards[pager.currentPage].name, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     cards[pager.currentPage].chapter?.let { Text(it, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall, maxLines = 1) }
                 }
-                Text("${pager.currentPage + 1} of ${cards.size}", color = Color.White)
+                Text("${pager.currentPage + 1} / ${cards.size}", color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.16f)).padding(horizontal = 12.dp, vertical = 6.dp))
             }
         }
         Spacer(Modifier.height(0.dp))

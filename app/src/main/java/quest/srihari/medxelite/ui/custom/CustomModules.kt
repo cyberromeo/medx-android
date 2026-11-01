@@ -1,5 +1,6 @@
 package quest.srihari.medxelite.ui.custom
 
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,7 +106,12 @@ fun CustomModulesScreen(nav: Navigator) {
         containerColor = Mx.colors.groupedBackground,
         topBar = { MedxTopBar("Custom modules", onBack = nav::back) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { nav.go("custom/edit") }) { Icon(Icons.Filled.Add, "New module") }
+            androidx.compose.material3.ExtendedFloatingActionButton(
+                onClick = { nav.go("custom/edit") },
+                containerColor = Mx.colors.accent, contentColor = Mx.colors.onAccent,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                icon = { Icon(Icons.Filled.Add, null) }, text = { Text("New module", style = MaterialTheme.typography.labelLarge) },
+            )
         },
     ) { pad ->
         when {
@@ -231,11 +237,10 @@ fun CustomModuleEditor(nav: Navigator, id: String?) {
                 }
             }
             item {
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    MedxBank.entries.forEachIndexed { i, b ->
-                        SegmentedButton(bank == b, { bank = b; openSubject = null }, SegmentedButtonDefaults.itemShape(i, 2)) { Text(b.label) }
-                    }
-                }
+                quest.srihari.medxelite.ui.components.SegmentedTabs(
+                    MedxBank.entries.map { it.label }, MedxBank.entries.indexOf(bank),
+                    Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                ) { i -> bank = MedxBank.entries[i]; openSubject = null }
             }
             when (val s = banks) {
                 is Load.Loading -> item { LoadingState() }
@@ -269,8 +274,10 @@ private fun SubjectPicker(
             Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            quest.srihari.medxelite.ui.components.SubjectIcon(subject.name, 40.dp)
+            Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(subject.name, fontWeight = FontWeight.SemiBold)
+                Text(subject.name, style = MaterialTheme.typography.titleMedium, color = Mx.colors.ink)
                 Text("${subject.moduleCount} modules" + if (count > 0) " · $count picked" else "", style = MaterialTheme.typography.bodySmall, color = if (count > 0) Mx.colors.accent else Mx.colors.secondaryText)
             }
             Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null)

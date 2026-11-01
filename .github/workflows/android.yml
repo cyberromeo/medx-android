@@ -2,7 +2,7 @@ name: Android debug APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, redesign-v3 ]
   pull_request:
   workflow_dispatch:
 

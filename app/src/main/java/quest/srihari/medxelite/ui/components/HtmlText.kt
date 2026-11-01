@@ -63,6 +63,7 @@ fun HtmlText(
     bold: Boolean = false,
     color: Color = MaterialTheme.colorScheme.onSurface,
     extraImages: List<String> = emptyList(),
+    lineSpacing: Float = 1.3f,
 ) {
     val images = remember(html, extraImages) { (RichHtml.images(html) + extraImages.mapNotNull { resolveCdn(it) }).distinct() }
     val spanned = remember(html) {
@@ -93,7 +94,7 @@ fun HtmlText(
                             isLongClickable = false
                             isFocusable = false
                         }
-                        setLineSpacing(0f, 1.15f)
+                        
                     }
                 },
                 update = { tv ->
@@ -101,7 +102,9 @@ fun HtmlText(
                     tv.setTextColor(argb)
                     tv.setLinkTextColor(linkColor)
                     tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp)
-                    tv.typeface = if (bold) android.graphics.Typeface.DEFAULT_BOLD else android.graphics.Typeface.DEFAULT
+                    tv.setLineSpacing(0f, lineSpacing)
+                    // Question stems read in a medium weight: firm, but calmer than bold for long text.
+                    tv.typeface = if (bold) android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL) else android.graphics.Typeface.DEFAULT
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -121,7 +124,7 @@ fun Figure(url: String) {
             .padding(top = 10.dp)
             .fillMaxWidth()
             .heightIn(max = 320.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable { zoom = true },
     )
     if (zoom) {

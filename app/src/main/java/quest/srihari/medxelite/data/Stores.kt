@@ -24,9 +24,10 @@ private fun Context.medxPrefs() = getSharedPreferences("medx.prefs", Context.MOD
 // ---------------------------------------------------------------- Theme + goals
 
 enum class MedxAccent(val label: String, val hex: Long) {
-    BLUE("Blue", 0xFF0A84FF), INDIGO("Indigo", 0xFF5E5CE6), PURPLE("Purple", 0xFFBF5AF2),
-    PINK("Pink", 0xFFFF375F), TEAL("Teal", 0xFF40C8E0), GREEN("Green", 0xFF30D158),
-    ORANGE("Orange", 0xFFFF9F0A), GRAPHITE("Graphite", 0xFF98989D),
+    // Names are the saved preference keys: keep them. Colours are the v3 light tones (AA on white).
+    BLUE("Cobalt", 0xFF3156E3), INDIGO("Indigo", 0xFF5146D9), PURPLE("Violet", 0xFF8A3FD6),
+    PINK("Rose", 0xFFCC2F6A), TEAL("Teal", 0xFF0B7F86), GREEN("Green", 0xFF1C8550),
+    ORANGE("Amber", 0xFFC2560A), GRAPHITE("Graphite", 0xFF555A66),
 }
 
 enum class MedxAppearance(val label: String) { SYSTEM("Automatic"), LIGHT("Light"), DARK("Dark") }

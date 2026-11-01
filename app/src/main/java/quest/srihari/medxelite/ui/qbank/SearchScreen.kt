@@ -67,12 +67,9 @@ fun SearchScreen(nav: Navigator) {
         }
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
-                OutlinedTextField(
-                    query, { query = it },
-                    placeholder = { Text("Subjects, chapters, modules…") },
-                    leadingIcon = { Icon(Icons.Filled.Search, null) },
-                    singleLine = true, shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).focusRequester(focus),
+                quest.srihari.medxelite.ui.components.SearchField(
+                    query, { query = it }, "Subjects, chapters, modules…",
+                    Modifier.padding(horizontal = 20.dp, vertical = 8.dp).focusRequester(focus),
                 )
             }
             if (q.length >= 2 && hits.isEmpty() && bookmarkHits.isEmpty()) {
@@ -101,7 +98,7 @@ fun SearchScreen(nav: Navigator) {
                 }
             }
             if (q.length < 2) {
-                item { Box(Modifier.padding(24.dp)) { Text("Type at least two letters.", color = Mx.colors.secondaryText) } }
+                item { quest.srihari.medxelite.ui.components.EmptyState("Search your QBank", "Type at least two letters to find subjects, chapters, modules and bookmarked questions.", icon = Icons.Filled.Search) }
             }
         }
     }

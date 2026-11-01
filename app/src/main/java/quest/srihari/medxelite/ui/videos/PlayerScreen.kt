@@ -1,5 +1,7 @@
 package quest.srihari.medxelite.ui.videos
 
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.draw.clip
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.net.Uri
@@ -171,10 +173,17 @@ fun PlayerScreen(nav: Navigator, video: RecordedVideo?) {
             },
             modifier = Modifier.fillMaxSize(),
         )
-        Column(Modifier.statusBarsPadding().padding(4.dp)) {
+        Column(
+            Modifier.fillMaxWidth()
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.65f), Color.Transparent)))
+                .statusBarsPadding().padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 20.dp),
+        ) {
             androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { nav.back() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
-                Text(video.displayTitle, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, modifier = Modifier.weight(1f))
+                Column(Modifier.weight(1f)) {
+                    Text(video.displayTitle, color = Color.White, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text(listOfNotNull(video.subject.ifBlank { null }, video.faculty).joinToString(" · "), color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                }
                 IconButton(onClick = {
                     activity?.requestedOrientation =
                         if (activity?.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -183,7 +192,11 @@ fun PlayerScreen(nav: Navigator, video: RecordedVideo?) {
             }
         }
         error?.let {
-            Text(it, color = Color.White, modifier = Modifier.align(Alignment.Center).padding(32.dp))
+            Text(
+                it, color = Color.White, style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.align(Alignment.Center).padding(32.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp)).background(Color.White.copy(alpha = 0.12f)).padding(20.dp),
+            )
         }
     }
 }

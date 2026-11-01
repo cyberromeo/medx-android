@@ -1,5 +1,7 @@
 package quest.srihari.medxelite.ui.library
 
+import quest.srihari.medxelite.ui.components.softShadow
+import quest.srihari.medxelite.ui.components.tappable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -117,19 +119,25 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
     ) { pad ->
         LazyVerticalGrid(
             GridCells.Adaptive(160.dp),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 32.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(pad),
         ) {
             items(features) { f ->
                 Column(
-                    Modifier.clip(RoundedCornerShape(18.dp)).background(Mx.colors.card).clickable { nav.go(f.route) }.padding(14.dp),
+                    Modifier
+                        .softShadow(RoundedCornerShape(24.dp), 8.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Mx.colors.card)
+                        .tappable { nav.go(f.route) }
+                        .padding(18.dp),
                 ) {
-                    IconTile(f.icon, f.hue, 36.dp)
-                    Spacer(Modifier.height(18.dp))
-                    Text(f.title, fontWeight = FontWeight.SemiBold)
-                    Text(f.subtitle, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, maxLines = 1)
+                    IconTile(f.icon, f.hue, 48.dp)
+                    Spacer(Modifier.height(20.dp))
+                    Text(f.title, style = MaterialTheme.typography.titleMedium, color = Mx.colors.ink, maxLines = 2)
+                    Spacer(Modifier.height(2.dp))
+                    Text(f.subtitle, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, maxLines = 2)
                 }
             }
         }
@@ -189,17 +197,18 @@ fun BookmarksScreen(nav: Navigator) {
     }
     open?.let { b ->
         ModalBottomSheet(onDismissRequest = { open = null }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Pill(b.sourceName)
                     Spacer(Modifier.weight(1f))
                     TextButton(onClick = { Medx.activity.remove(b); open = null }) { Text("Remove", color = Mx.colors.wrong) }
                 }
-                HtmlText(b.question.displayText, sizeSp = 17f, bold = true, extraImages = b.question.images.orEmpty())
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
+                HtmlText(b.question.displayText, sizeSp = 17f, bold = true, extraImages = b.question.images.orEmpty(), lineSpacing = 1.4f)
+                Spacer(Modifier.height(16.dp))
                 b.question.options.forEachIndexed { i, o ->
                     OptionButton(o, i, chosen = false, correct = b.question.isCorrect(o.id), revealed = true, locked = true) {}
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
                 }
                 Explanation(b.question)
                 Spacer(Modifier.height(32.dp))
@@ -298,7 +307,7 @@ fun ActivityLogScreen(nav: Navigator) {
                                 showChevron = false,
                                 divider = i < list.size - 1,
                                 trailingContent = {
-                                    IconButton(onClick = { deleting = a }, modifier = Modifier.size(32.dp)) {
+                                    IconButton(onClick = { deleting = a }) {
                                         Icon(Icons.Filled.Delete, "Delete", tint = Mx.colors.tertiaryText, modifier = Modifier.size(18.dp))
                                     }
                                 },

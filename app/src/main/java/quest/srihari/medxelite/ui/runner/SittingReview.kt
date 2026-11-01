@@ -26,7 +26,31 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.Button
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.TrackChanges
+import quest.srihari.medxelite.ui.components.Card
+import quest.srihari.medxelite.ui.components.ChoiceChip
+import quest.srihari.medxelite.ui.components.MedxRow
+import quest.srihari.medxelite.ui.components.Pill
+import quest.srihari.medxelite.ui.components.PrimaryButton
+import quest.srihari.medxelite.ui.components.ProgressRing
+import quest.srihari.medxelite.ui.components.RowShape
+import quest.srihari.medxelite.ui.components.SectionHeader
+import quest.srihari.medxelite.ui.components.Space
+import quest.srihari.medxelite.ui.components.StatTile
+import quest.srihari.medxelite.ui.components.softShadow
+import quest.srihari.medxelite.ui.theme.Hues
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -101,52 +125,75 @@ fun SittingReview(
         }
     }
 
+    val c = Mx.colors
+    val scoreColor = when {
+        !gradable -> c.accent
+        pct >= 70 -> c.correct
+        pct >= 50 -> c.accent
+        else -> c.flagged
+    }
     Scaffold(
-        containerColor = Mx.colors.groupedBackground,
+        containerColor = c.groupedBackground,
         topBar = {
-            MedxTopBar("Results", actions = { TextButton(onClick = onDone) { Text("Done", fontWeight = FontWeight.SemiBold) } })
+            MedxTopBar("Results", actions = {
+                TextButton(onClick = onDone, modifier = Modifier.heightIn(min = 48.dp)) { Text("Done", style = MaterialTheme.typography.labelLarge, color = c.accent) }
+            })
         },
     ) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
-                Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(name, style = MaterialTheme.typography.titleMedium, color = Mx.colors.secondaryText, maxLines = 2)
-                    Spacer(Modifier.height(8.dp))
-                    if (gradable) {
-                        Text("$score / $total", fontSize = 48.sp, fontWeight = FontWeight.Black)
-                        Text("$verdict · $pct%", style = MaterialTheme.typography.titleMedium, color = Mx.colors.accent)
-                    } else {
-                        Text("$attempted / $total", fontSize = 48.sp, fontWeight = FontWeight.Black)
-                        Text("answered · this paper has no answer key yet", color = Mx.colors.secondaryText)
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                        Stat("$attempted", "attempted")
-                        if (gradable) Stat(if (attempted > 0) "${Math.round(score * 100.0 / attempted)}%" else "–", "accuracy")
-                        Stat(formatDuration(elapsedSeconds), "time")
-                    }
-                }
-            }
-            if (sections.size > 1) {
-                item {
-                    GroupedSection("Blocks", "Each one was timed on its own and submitted for good.") {
-                        sections.sortedBy { it.index }.forEach { b ->
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(b.label, fontWeight = FontWeight.SemiBold)
-                                    Text("${b.attempted} attempted · ${formatDuration(b.seconds)}", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
+                Box(Modifier.padding(horizontal = Space.margin, vertical = 8.dp)) {
+                    Card(padding = PaddingValues(horizontal = 20.dp, vertical = 28.dp)) {
+                        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                            val fraction = if (gradable) score.toFloat() / maxOf(total, 1) else attempted.toFloat() / maxOf(total, 1)
+                            ProgressRing(fraction, 168.dp, 14.dp, scoreColor, c.sunken) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        if (gradable) "$pct%" else "$attempted",
+                                        style = MaterialTheme.typography.displayMedium, color = c.ink,
+                                    )
+                                    Text(if (gradable) "$score of $total" else "of $total answered", style = MaterialTheme.typography.labelLarge, color = c.secondaryText)
                                 }
-                                Text("${b.score}/${b.total}", fontWeight = FontWeight.Bold)
                             }
+                            Spacer(Modifier.height(20.dp))
+                            Text(if (gradable) verdict else "Paper submitted", style = MaterialTheme.typography.headlineSmall, color = c.ink, textAlign = TextAlign.Center)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                if (gradable) name else "This paper has no answer key yet · $name",
+                                style = MaterialTheme.typography.bodyMedium, color = c.secondaryText, textAlign = TextAlign.Center, maxLines = 2,
+                            )
                         }
                     }
                 }
             }
             item {
-                Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(filter == ReviewFilter.ALL, { filter = ReviewFilter.ALL }, { Text("All ($total)") })
-                    if (gradable) FilterChip(filter == ReviewFilter.WRONG, { filter = ReviewFilter.WRONG }, { Text("Wrong ($wrongCount)") })
-                    FilterChip(filter == ReviewFilter.SKIPPED, { filter = ReviewFilter.SKIPPED }, { Text("Skipped ($skippedCount)") })
+                Row(Modifier.padding(horizontal = Space.margin, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    StatTile("$attempted", "Attempted", Icons.Rounded.EditNote, Hues.blue, Modifier.weight(1f))
+                    if (gradable) StatTile(if (attempted > 0) "${Math.round(score * 100.0 / attempted)}%" else "–", "Accuracy", Icons.Rounded.TrackChanges, Hues.green, Modifier.weight(1f))
+                    StatTile(formatDuration(elapsedSeconds), "Time taken", Icons.Rounded.Timer, Hues.purple, Modifier.weight(1f))
+                }
+            }
+            if (sections.size > 1) {
+                item {
+                    GroupedSection("Blocks", "Each one was timed on its own and submitted for good.") {
+                        val sorted = sections.sortedBy { it.index }
+                        sorted.forEachIndexed { i, b ->
+                            MedxRow(
+                                b.label, "${b.attempted} attempted · ${formatDuration(b.seconds)}",
+                                trailingContent = { Pill("${b.score}/${b.total}") }, divider = i < sorted.size - 1,
+                            )
+                        }
+                    }
+                }
+            }
+            item {
+                Column(Modifier.padding(start = Space.margin, end = Space.margin, top = 18.dp, bottom = 4.dp)) {
+                    SectionHeader("Review answers")
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ChoiceChip("All ($total)", filter == ReviewFilter.ALL, { filter = ReviewFilter.ALL })
+                        if (gradable) ChoiceChip("Wrong ($wrongCount)", filter == ReviewFilter.WRONG, { filter = ReviewFilter.WRONG })
+                        ChoiceChip("Skipped ($skippedCount)", filter == ReviewFilter.SKIPPED, { filter = ReviewFilter.SKIPPED })
+                    }
                 }
             }
             itemsIndexed(shown, key = { _, v -> v.value.id }) { _, (index, q) ->
@@ -155,60 +202,55 @@ fun SittingReview(
                 val marked = bookmarks.any { it.question.id == q.id && it.sourceId == sourceId }
                 Column(
                     Modifier
-                        .padding(horizontal = 16.dp, vertical = 5.dp)
+                        .padding(horizontal = Space.margin, vertical = 6.dp)
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Mx.colors.card)
+                        .softShadow(RowShape, 6.dp)
+                        .clip(RowShape)
+                        .background(c.card)
                         .clickable { expanded = if (open) null else q.id }
-                        .padding(14.dp),
+                        .padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 14.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        val (icon, tint) = when {
-                            r?.chosenId == null -> Icons.Filled.Remove to Mx.colors.tertiaryText
-                            !gradable -> Icons.Filled.Check to Mx.colors.accent
-                            r.correct -> Icons.Filled.Check to Mx.colors.correct
-                            else -> Icons.Filled.Close to Mx.colors.wrong
+                        val (icon, hue) = when {
+                            r?.chosenId == null -> Icons.Rounded.Remove to c.tertiaryText
+                            !gradable -> Icons.Rounded.Check to c.accent
+                            r.correct -> Icons.Rounded.Check to c.correct
+                            else -> Icons.Rounded.Close to c.wrong
                         }
-                        Box(Modifier.size(26.dp).clip(CircleShape).background(tint.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                            Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
+                        Box(Modifier.size(28.dp).clip(CircleShape).background(hue.copy(alpha = if (c.isDark) 0.22f else 0.13f)), contentAlignment = Alignment.Center) {
+                            Icon(icon, null, tint = hue, modifier = Modifier.size(17.dp))
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text("Q${index + 1}", fontWeight = FontWeight.Bold)
+                        Text("Q${index + 1}", style = MaterialTheme.typography.titleMedium, color = c.ink)
                         val tag = tags?.getOrNull(index)
-                        if (!tag.isNullOrEmpty()) Text("  $tag", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
+                        if (!tag.isNullOrEmpty()) Text("  ·  $tag", style = MaterialTheme.typography.labelMedium, color = c.secondaryText, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { Medx.activity.toggleBookmark(q, sourceId, name, subject) }, modifier = Modifier.size(32.dp)) {
-                            Icon(if (marked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder, "Bookmark", tint = if (marked) Mx.colors.flagged else Mx.colors.secondaryText)
+                        IconButton(onClick = { Medx.activity.toggleBookmark(q, sourceId, name, subject) }) {
+                            Icon(if (marked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder, if (marked) "Remove bookmark" else "Bookmark", tint = if (marked) c.flagged else c.secondaryText)
                         }
                     }
-                    if (!open) {
-                        Text(RichHtml.plain(q.displayText), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = Mx.colors.secondaryText, style = MaterialTheme.typography.bodyMedium)
-                    }
-                    AnimatedVisibility(open) {
-                        Column {
-                            Spacer(Modifier.height(6.dp))
-                            HtmlText(q.displayText, sizeSp = 16f, bold = true, extraImages = q.images.orEmpty())
-                            Spacer(Modifier.height(10.dp))
-                            q.options.forEachIndexed { i, o ->
-                                OptionButton(o, i, chosen = r?.chosenId == o.id, correct = q.isCorrect(o.id), revealed = gradable, locked = true) {}
-                                Spacer(Modifier.height(8.dp))
+                    Column(Modifier.padding(end = 12.dp)) {
+                        if (!open) {
+                            Text(RichHtml.plain(q.displayText), maxLines = 2, overflow = TextOverflow.Ellipsis, color = c.secondaryText, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        AnimatedVisibility(open) {
+                            Column {
+                                Spacer(Modifier.height(4.dp))
+                                HtmlText(q.displayText, sizeSp = 17f, bold = true, extraImages = q.images.orEmpty(), lineSpacing = 1.4f)
+                                Spacer(Modifier.height(14.dp))
+                                q.options.forEachIndexed { i, o ->
+                                    OptionButton(o, i, chosen = r?.chosenId == o.id, correct = q.isCorrect(o.id), revealed = gradable, locked = true) {}
+                                    Spacer(Modifier.height(10.dp))
+                                }
+                                Explanation(q)
                             }
-                            Explanation(q)
                         }
                     }
                 }
             }
             item {
-                Button(onClick = onDone, modifier = Modifier.fillMaxWidth().padding(16.dp)) { Text("Done") }
+                PrimaryButton("Done", onDone, modifier = Modifier.fillMaxWidth().padding(horizontal = Space.margin, vertical = 20.dp))
             }
         }
-    }
-}
-
-@Composable
-private fun Stat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
     }
 }

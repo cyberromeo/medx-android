@@ -1,5 +1,6 @@
 package quest.srihari.medxelite.ui.videos
 
+import quest.srihari.medxelite.ui.components.SearchField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -117,11 +118,7 @@ fun VideosScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     }
                     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
-                            OutlinedTextField(
-                                query, { query = it }, placeholder = { Text("Search classes, subjects, faculty") },
-                                singleLine = true, shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                            )
+                            SearchField(query, { query = it }, "Search classes, subjects, faculty", Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
                         }
                         if (batches.isEmpty()) item { EmptyState("No classes", if (query.isBlank()) "Nothing has been published yet." else "No class matches “$query”.") }
                         batches.forEach { (bId, pair) ->
@@ -178,7 +175,7 @@ fun VideoRow(v: RecordedVideo, progress: Double?, completed: Boolean, divider: B
         showChevron = false,
         trailingContent = {
             if (progress != null && progress > 0 && !completed) {
-                LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.width(48.dp))
+                quest.srihari.medxelite.ui.components.ProgressRing(progress.toFloat(), 26.dp, 3.5.dp, Mx.colors.accent, Mx.colors.sunken)
             }
         },
         onClick = onClick,
@@ -231,7 +228,7 @@ fun VodFeedScreen(nav: Navigator) {
                             if (v.durationSeconds > 0) hours(v.durationSeconds) else null,
                         ).joinToString(" · "),
                         leading = {
-                            Box(Modifier.size(width = 72.dp, height = 44.dp).clip(RoundedCornerShape(8.dp)).background(Mx.colors.separator), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(width = 80.dp, height = 48.dp).clip(RoundedCornerShape(12.dp)).background(Mx.colors.sunken), contentAlignment = Alignment.Center) {
                                 if (v.thumbnailUrl.isNotBlank()) {
                                     AsyncImage(v.thumbnailUrl, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                 } else Icon(Icons.Filled.PlayArrow, null, tint = Mx.colors.secondaryText)

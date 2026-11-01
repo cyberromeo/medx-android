@@ -1,6 +1,8 @@
 package quest.srihari.medxelite.ui
 
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -14,6 +16,17 @@ import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Assignment
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
+import quest.srihari.medxelite.ui.theme.Mx
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,12 +65,12 @@ import quest.srihari.medxelite.ui.videos.VideoSubjectScreen
 import quest.srihari.medxelite.ui.videos.VideosScreen
 import quest.srihari.medxelite.ui.videos.VodFeedScreen
 
-enum class Tab(val label: String, val icon: ImageVector) {
-    HOME("Home", Icons.Outlined.Home),
-    QBANK("QBank", Icons.AutoMirrored.Outlined.LibraryBooks),
-    TESTS("Tests", Icons.Outlined.Assignment),
-    CLASSES("Classes", Icons.Outlined.PlayCircle),
-    LIBRARY("Library", Icons.Outlined.GridView),
+enum class Tab(val label: String, val icon: ImageVector, val selectedIcon: ImageVector) {
+    HOME("Home", Icons.Outlined.Home, Icons.Rounded.Home),
+    QBANK("QBank", Icons.AutoMirrored.Outlined.LibraryBooks, Icons.AutoMirrored.Rounded.LibraryBooks),
+    TESTS("Tests", Icons.Outlined.Assignment, Icons.Rounded.Assignment),
+    CLASSES("Classes", Icons.Outlined.PlayCircle, Icons.Rounded.PlayCircle),
+    LIBRARY("Library", Icons.Outlined.GridView, Icons.Rounded.GridView),
 }
 
 /** Hand-off for arguments too rich for a route string (AppState.pendingRunnerPayload on iOS). */
@@ -94,26 +107,40 @@ fun AppRoot() {
     val nav = rememberNavController()
     val navigator = Navigator(nav)
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
+    val reduce = Mx.reduceMotion
 
     NavHost(
         navController = nav,
         startDestination = "tabs",
-        enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
-        exitTransition = { fadeOut() },
-        popEnterTransition = { fadeIn() },
-        popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+        enterTransition = { if (reduce) fadeIn(snap()) else slideInHorizontally(tween(320)) { it / 4 } + fadeIn(tween(220)) },
+        exitTransition = { if (reduce) fadeOut(snap()) else fadeOut(tween(180)) },
+        popEnterTransition = { if (reduce) fadeIn(snap()) else fadeIn(tween(220)) },
+        popExitTransition = { if (reduce) fadeOut(snap()) else slideOutHorizontally(tween(280)) { it / 4 } + fadeOut(tween(200)) },
     ) {
         composable("tabs") {
             Scaffold(
+                containerColor = Mx.colors.groupedBackground,
                 bottomBar = {
-                    NavigationBar {
-                        Tab.entries.forEach { t ->
-                            NavigationBarItem(
-                                selected = tab == t,
-                                onClick = { tab = t },
-                                icon = { Icon(t.icon, null) },
-                                label = { Text(t.label) },
-                            )
+                    val c = Mx.colors
+                    Column {
+                        HorizontalDivider(color = c.separator, thickness = 1.dp)
+                        NavigationBar(containerColor = c.card, tonalElevation = 0.dp) {
+                            Tab.entries.forEach { t ->
+                                val on = tab == t
+                                NavigationBarItem(
+                                    selected = on,
+                                    onClick = { tab = t },
+                                    icon = { Icon(if (on) t.selectedIcon else t.icon, null) },
+                                    label = { Text(t.label, style = MaterialTheme.typography.labelMedium, maxLines = 1) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = c.onAccentContainer,
+                                        selectedTextColor = c.ink,
+                                        indicatorColor = c.accentContainer,
+                                        unselectedIconColor = c.secondaryText,
+                                        unselectedTextColor = c.secondaryText,
+                                    ),
+                                )
+                            }
                         }
                     }
                 },

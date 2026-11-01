@@ -17,6 +17,8 @@ import quest.srihari.medxelite.data.Question
 import quest.srihari.medxelite.data.QuestionOption
 import quest.srihari.medxelite.data.QuestionResponse
 import quest.srihari.medxelite.data.RecordedVideo
+import quest.srihari.medxelite.data.SeriesGroup
+import quest.srihari.medxelite.data.SeriesPaper
 import quest.srihari.medxelite.data.SittingAttempt
 import quest.srihari.medxelite.data.StatsMath
 import quest.srihari.medxelite.data.WatchHistoryEntry
@@ -183,12 +185,46 @@ object DemoData {
         "Pathology" to 214, "Pharmacology" to 197, "Physiology" to 133, "Surgery" to 159,
     ).mapIndexed { i, (n, c) -> FlashcardSubject(i + 1, n, c, emptyList()) }
 
+    // ---------------------------------------------------------------- Test series + classes
+
+    private fun at(daysAgo: Long) = LocalDate.now().minusDays(daysAgo).atTime(10, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli().toDouble()
+
+    val series = listOf(
+        SeriesPaper("gt_12", "Grand Test 12", SeriesGroup.GRAND, "2026", 300, 300, at(3), false, true),
+        SeriesPaper("gt_11", "Grand Test 11", SeriesGroup.GRAND, "2026", 300, 300, at(17), false, true),
+        SeriesPaper("gt_10", "Grand Test 10", SeriesGroup.GRAND, "2026", 300, 300, at(31), false, true),
+        SeriesPaper("gt_9", "Grand Test 9 · Recall of Jun 2026", SeriesGroup.GRAND, "2026", 300, 300, at(45), false, true),
+        SeriesPaper("gt_8", "Grand Test 8", SeriesGroup.GRAND, "2026", 300, 300, at(60), false, true),
+        SeriesPaper("mini_4", "Mini Test 4 · Para-clinicals", SeriesGroup.MINI, "2026", 100, 100, at(8), false, true),
+        SeriesPaper("mini_3", "Mini Test 3 · Pre-clinicals", SeriesGroup.MINI, "2026", 100, 100, at(24), false, true),
+        SeriesPaper("sub_pharm", "Pharmacology", SeriesGroup.SUBJECT, "2026", 60, 60, at(12), false, true),
+    )
+
+    private fun vid(id: Int, subject: String, title: String, faculty: String, mins: Int, batch: String = "ARISE Jan 2027") = RecordedVideo(
+        id = "vid_$id", batchId = batch.hashCode().toString(), batch = batch, subjectId = subject.lowercase(), subject = subject,
+        title = title, faculty = faculty, durationSeconds = mins * 60, streamUrl = "",
+    )
+
+    val videos = listOf(
+        vid(1, "Pharmacology", "General Pharmacology — Part 1", "Dr. Gobind Rai Garg", 104),
+        vid(2, "Pharmacology", "Autonomic Nervous System — Part 2", "Dr. Gobind Rai Garg", 92),
+        vid(3, "Pharmacology", "Cardiovascular Drugs", "Dr. Gobind Rai Garg", 118),
+        vid(4, "Pathology", "Cell Injury & Adaptation", "Dr. Preeti Sharma", 96),
+        vid(5, "Pathology", "Inflammation", "Dr. Preeti Sharma", 88),
+        vid(6, "Pathology", "Haematology — Anaemias", "Dr. Preeti Sharma", 121),
+        vid(7, "Medicine", "Cardiology — ECG basics", "Dr. Deepak Marwah", 110),
+        vid(8, "Medicine", "Endocrinology — Diabetes", "Dr. Deepak Marwah", 97),
+        vid(9, "Microbiology", "Bacteriology — Gram positive cocci", "Dr. Apurba Sastry", 84),
+        vid(10, "Anatomy", "Upper Limb — Brachial plexus", "Dr. Rajesh Kaushal", 102),
+        vid(11, "Community Medicine", "Epidemiology — Study designs", "Dr. Vivek Jain", 99),
+    )
+
     /** Push the sample state into the app's singletons. Call after [Medx.init]. */
     @Suppress("UNCHECKED_CAST")
     fun install(signedIn: Boolean = true) {
         (Medx.auth.session as MutableStateFlow<AuthSession?>).value = if (signedIn) session else null
         Medx.prefs.accent.value = MedxAccent.BLUE
-        Medx.prefs.appearance.value = MedxAppearance.SYSTEM
+        Medx.prefs.appearance.value = MedxAppearance.LIGHT
         Medx.prefs.dailyGoal.value = 50
         Medx.prefs.examName.value = "FMGE"
         Medx.prefs.examDate.value = LocalDate.of(2027, 1, 9)
@@ -200,5 +236,7 @@ object DemoData {
         Medx.activity.bookmarks.value = emptyList()
         Catalog.banks.value = Load.Ready(subjects)
         Catalog.flashcards.value = Load.Ready(flashcards)
+        Catalog.series.value = Load.Ready(series)
+        Catalog.videos.value = Load.Ready(videos)
     }
 }

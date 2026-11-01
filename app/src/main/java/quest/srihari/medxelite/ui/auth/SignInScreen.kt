@@ -49,6 +49,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.MailOutline
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import quest.srihari.medxelite.R
+import quest.srihari.medxelite.ui.components.PrimaryButton
+import quest.srihari.medxelite.ui.components.tappable
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -150,14 +163,15 @@ fun SignInScreen() {
         }
     }
 
-    val accent = Mx.colors.accent
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(accent.copy(alpha = 0.18f), Mx.colors.groupedBackground, Mx.colors.groupedBackground)),
-            ),
-    ) {
+    val c = Mx.colors
+    Box(Modifier.fillMaxSize().background(c.groupedBackground)) {
+        // A soft wash of brand colour behind the mark: depth without decoration.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(360.dp)
+                .background(Brush.verticalGradient(listOf(c.accentContainer.copy(alpha = if (c.isDark) 0.55f else 0.9f), c.groupedBackground))),
+        )
         Column(
             Modifier
                 .fillMaxSize()
@@ -167,76 +181,86 @@ fun SignInScreen() {
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(48.dp))
-            MedxLogoMark(size = 88.dp)
-            Spacer(Modifier.height(18.dp))
-            Text("MedX Elite", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(56.dp))
+            MedxLogoMark(size = 76.dp)
+            Spacer(Modifier.height(24.dp))
+            Text("Welcome to MedX Elite", style = MaterialTheme.typography.headlineMedium, color = c.ink, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
             Text(
-                "Sign in to your MedX account",
-                color = Mx.colors.secondaryText,
+                "Sign in to pick up your FMGE prep where you left off.",
+                color = c.secondaryText,
                 style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = 320.dp),
             )
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(36.dp))
 
             Column(Modifier.widthIn(max = 440.dp).fillMaxWidth()) {
-                OutlinedButton(
-                    onClick = ::signInGoogle,
+                GoogleSignInButton(
+                    dark = c.isDark,
+                    loading = busy == "google",
                     enabled = busy == null,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
-                ) {
-                    if (busy == "google") {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        GoogleG()
-                        Spacer(Modifier.width(10.dp))
-                        Text("Continue with Google", fontWeight = FontWeight.SemiBold)
-                    }
+                    onClick = ::signInGoogle,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Row(Modifier.padding(vertical = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                    HorizontalDivider(Modifier.weight(1f), color = c.separator)
+                    Text("or with email", color = c.secondaryText, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 12.dp))
+                    HorizontalDivider(Modifier.weight(1f), color = c.separator)
                 }
 
-                Row(Modifier.padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    HorizontalDivider(Modifier.weight(1f), color = Mx.colors.separator)
-                    Text("  or use email  ", color = Mx.colors.secondaryText, style = MaterialTheme.typography.labelMedium)
-                    HorizontalDivider(Modifier.weight(1f), color = Mx.colors.separator)
-                }
-
+                val fieldColors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = c.card, unfocusedContainerColor = c.card,
+                    unfocusedBorderColor = c.separator, focusedBorderColor = c.accent,
+                    focusedLabelColor = c.accent, unfocusedLabelColor = c.secondaryText,
+                    cursorColor = c.accent,
+                )
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email") },
+                    leadingIcon = { Icon(Icons.Rounded.MailOutline, null, tint = c.secondaryText) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = fieldColors,
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
+                    leadingIcon = { Icon(Icons.Rounded.Lock, null, tint = c.secondaryText) },
                     singleLine = true,
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Go),
                     keyboardActions = KeyboardActions(onGo = { signInEmail() }),
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
-                            Icon(if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, "Show password")
+                            Icon(
+                                if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                if (showPassword) "Hide password" else "Show password",
+                                tint = c.secondaryText,
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = fieldColors,
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = ::forgot, enabled = busy == null) {
-                        Text(if (busy == "reset") "Sending…" else "Forgot password?")
+                        Text(if (busy == "reset") "Sending…" else "Forgot password?", style = MaterialTheme.typography.labelLarge, color = c.accent)
                     }
                 }
 
                 if (error != null) {
-                    Text(error!!, color = Mx.colors.wrong, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+                    Notice(error!!, c.wrong, c.wrongContainer)
                 }
                 if (info != null) {
-                    Text(info!!, color = Mx.colors.correct, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+                    Notice(info!!, c.correct, c.correctContainer)
                 }
                 if (canResend) {
                     TextButton(onClick = {
@@ -249,38 +273,34 @@ fun SignInScreen() {
                             error = null
                             canResend = false
                         }
-                    }) { Text("Resend verification email") }
+                    }) { Text("Resend verification email", style = MaterialTheme.typography.labelLarge) }
                 }
                 if (needsActivation) {
-                    TextButton(onClick = { openCustomTab(context, Config.WEB_ACTIVATE_URL) }) { Text("Activate on the MedX website") }
+                    TextButton(onClick = { openCustomTab(context, Config.WEB_ACTIVATE_URL) }) { Text("Activate on the MedX website", style = MaterialTheme.typography.labelLarge) }
                 }
 
-                Button(
+                Spacer(Modifier.height(8.dp))
+                PrimaryButton(
+                    "Sign in",
                     onClick = ::signInEmail,
-                    enabled = busy == null,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
-                ) {
-                    if (busy == "email") {
-                        CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                    } else {
-                        Text("Sign in", fontWeight = FontWeight.SemiBold)
-                    }
-                }
+                    enabled = busy == null || busy == "email",
+                    loading = busy == "email",
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(32.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Text("New to MedX?", color = Mx.colors.secondaryText)
+                    Text("New to MedX?", color = c.secondaryText, style = MaterialTheme.typography.bodyMedium)
                     TextButton(onClick = { openCustomTab(context, Config.WEB_CREATE_ACCOUNT_URL) }) {
-                        Text("Create account", fontWeight = FontWeight.SemiBold)
+                        Text("Create account", style = MaterialTheme.typography.labelLarge, color = c.accent)
                     }
                 }
                 Text(
                     "Accounts are created on the MedX website with an activation code, then work here too.",
-                    color = Mx.colors.tertiaryText,
+                    color = c.secondaryText,
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                 )
                 Spacer(Modifier.height(32.dp))
             }
@@ -289,11 +309,43 @@ fun SignInScreen() {
 }
 
 @Composable
-private fun GoogleG() {
+private fun Notice(text: String, fg: Color, bg: Color) {
+    Text(
+        text, color = fg, style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).clip(RoundedCornerShape(14.dp)).background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
+    )
+}
+
+/**
+ * Sign in with Google button built to Google's branding guidelines
+ * (developers.google.com/identity/branding-guidelines): light #FFFFFF / 1dp #747775 stroke /
+ * #1F1F1F text, dark #131314 / #8E918F / #E3E3E3, standard four-colour G at its fixed size,
+ * 12dp before the logo, 10dp after it, 12dp after the text, medium-weight label.
+ */
+@Composable
+fun GoogleSignInButton(dark: Boolean, loading: Boolean, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val fill = if (dark) Color(0xFF131314) else Color(0xFFFFFFFF)
+    val stroke = if (dark) Color(0xFF8E918F) else Color(0xFF747775)
+    val text = if (dark) Color(0xFFE3E3E3) else Color(0xFF1F1F1F)
     Box(
-        Modifier.size(22.dp).clip(RoundedCornerShape(50)).background(Color.White),
+        modifier
+            .heightIn(min = 52.dp)
+            .clip(RoundedCornerShape(50))
+            .background(fill)
+            .border(1.dp, stroke, RoundedCornerShape(50))
+            .tappable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text("G", color = Color(0xFF4285F4), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Row(Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Image(painterResource(R.drawable.ic_google_g), contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+            if (loading) {
+                CircularProgressIndicator(Modifier.size(18.dp), color = text, strokeWidth = 2.dp)
+                Spacer(Modifier.width(10.dp))
+                Text("Signing in…", color = text, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 20.sp)
+            } else {
+                Text("Continue with Google", color = text, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 20.sp)
+            }
+        }
     }
 }

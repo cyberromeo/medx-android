@@ -1,5 +1,16 @@
 package quest.srihari.medxelite.ui.faceoff
 
+import androidx.compose.ui.graphics.Color
+import quest.srihari.medxelite.ui.components.ChoiceChip
+import quest.srihari.medxelite.ui.components.PrimaryButton
+import quest.srihari.medxelite.ui.components.SectionHeader
+import quest.srihari.medxelite.ui.components.softShadow
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -121,40 +132,33 @@ fun FaceoffScreen(nav: Navigator) {
 
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar("Faceoff", onBack = nav::back) }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
-            item {
-                Card(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Bolt, null, tint = Hues.yellow)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Duel any MedX friend", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                    Text(
-                        "Same questions, same 60-second clock. A right answer scores 40 plus the seconds left. Create a room and share its code, or join one.",
-                        color = Mx.colors.secondaryText, style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
+            item { FaceoffHero() }
             item {
                 GroupedSection("Join a room", error) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             code, { code = it.uppercase().filter { ch -> ch.isLetterOrDigit() }.take(8) },
-                            placeholder = { Text("Room code") }, singleLine = true,
+                            placeholder = { Text("Room code", style = MaterialTheme.typography.titleMedium) }, singleLine = true,
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                            textStyle = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Monospace, letterSpacing = 4.sp),
+                            textStyle = MaterialTheme.typography.titleLarge.copy(letterSpacing = 3.sp, color = Mx.colors.ink),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Mx.colors.sunken, unfocusedContainerColor = Mx.colors.sunken,
+                                unfocusedBorderColor = Color.Transparent, focusedBorderColor = Mx.colors.accent,
+                            ),
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(10.dp))
-                        Button(onClick = ::join, enabled = busy == null) {
-                            if (busy == "join") CircularProgressIndicator(Modifier.height(18.dp).width(18.dp), strokeWidth = 2.dp) else Text("Join")
-                        }
+                        PrimaryButton("Join", ::join, enabled = busy == null || busy == "join", loading = busy == "join")
                     }
                 }
             }
             item {
-                GroupedSection("Create a room — length") {
-                    Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DuelRules.LENGTHS.forEach { l -> FilterChip(length == l, { length = l }, { Text(if (l == 0) "Whole paper" else "$l questions") }) }
+                Column(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                    SectionHeader("Create a room")
+                    Text("How many questions?", style = MaterialTheme.typography.bodyMedium, color = Mx.colors.secondaryText, modifier = Modifier.padding(start = 4.dp, bottom = 10.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DuelRules.LENGTHS.forEach { l -> ChoiceChip(if (l == 0) "Whole paper" else "$l questions", length == l, { length = l }) }
                     }
                 }
             }
@@ -165,7 +169,7 @@ fun FaceoffScreen(nav: Navigator) {
                     GroupedSection("Pick a paper to deal from") {
                         val papers = s.value.sortedByDescending { it.startAt }.take(60)
                         papers.forEachIndexed { i, p ->
-                            MedxRow(p.title, "${p.group.label} · ${p.questions} questions", icon = Icons.Filled.EmojiEvents, iconTint = Hues.forName(p.title), divider = i < papers.size - 1) { pick = p }
+                            MedxRow(p.title, "${p.group.label} · ${p.questions} questions", icon = Icons.Filled.EmojiEvents, iconTint = Hues.orange, divider = i < papers.size - 1) { pick = p }
                         }
                     }
                 }
@@ -239,7 +243,7 @@ private fun DuelRoomScreen(gameId: String, onClose: () -> Unit) {
                 DuelPhase.LOBBY -> Lobby(room)
                 DuelPhase.ARMING -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Text("Question ${room.qIndex + 1}", style = MaterialTheme.typography.titleMedium, color = Mx.colors.secondaryText)
-                    Text("${room.armingIn}", fontSize = 96.sp, fontWeight = FontWeight.Black, color = Mx.colors.accent)
+                    Text("${room.armingIn}", style = MaterialTheme.typography.displayLarge, fontSize = 112.sp, lineHeight = 120.sp, color = Mx.colors.accent)
                     Scoreboard(room)
                 }
                 DuelPhase.ASKED, DuelPhase.WAITING, DuelPhase.REVEAL -> Round(room)
@@ -266,9 +270,14 @@ private fun DuelRoomScreen(gameId: String, onClose: () -> Unit) {
 @Composable
 private fun Lobby(room: DuelRoom) {
     Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Text("ROOM CODE", style = MaterialTheme.typography.labelLarge, color = Mx.colors.secondaryText)
-        Text(room.gameId, fontSize = 48.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace, letterSpacing = 6.sp, color = Mx.colors.accent)
-        Text(room.sourceLabel(), color = Mx.colors.secondaryText, textAlign = TextAlign.Center)
+        Text("Room code", style = MaterialTheme.typography.labelLarge, color = Mx.colors.secondaryText)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            room.gameId, style = MaterialTheme.typography.displayMedium, letterSpacing = 8.sp, color = Mx.colors.onAccentContainer,
+            modifier = Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp)).background(Mx.colors.accentContainer).padding(horizontal = 24.dp, vertical = 12.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(room.sourceLabel(), style = MaterialTheme.typography.bodyMedium, color = Mx.colors.secondaryText, textAlign = TextAlign.Center)
         Spacer(Modifier.height(28.dp))
         val other = room.theirs
         if (room.isHost) {
@@ -279,11 +288,11 @@ private fun Lobby(room: DuelRoom) {
             } else {
                 Text("${other.profile.ifBlank { "Your friend" }} joined", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { room.startGame() }, modifier = Modifier.fillMaxWidth()) { Text("Start the duel") }
+                PrimaryButton("Start the duel", { room.startGame() }, modifier = Modifier.fillMaxWidth())
             }
         } else {
             if (room.mine == null) {
-                Button(onClick = { room.join() }) { Text("Join ${room.hostName()}'s room") }
+                PrimaryButton("Join ${room.hostName()}'s room", { room.join() })
             } else {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(12.dp))
@@ -296,16 +305,10 @@ private fun Lobby(room: DuelRoom) {
 @Composable
 private fun Scoreboard(room: DuelRoom) {
     val s = room.scores
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Column {
-            Text("You", style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText)
-            Text("${s[room.uid]?.points ?: 0}", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Mx.colors.accent)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(room.theirName, style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText)
-            val theirUid = room.uids.firstOrNull { it != room.uid }
-            Text("${theirUid?.let { s[it]?.points } ?: 0}", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Hues.pink)
-        }
+    val theirUid = room.uids.firstOrNull { it != room.uid }
+    Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        ScoreCard("You", s[room.uid]?.points ?: 0, Mx.colors.accent, Modifier.weight(1f))
+        ScoreCard(room.theirName, theirUid?.let { s[it]?.points } ?: 0, Hues.pink, Modifier.weight(1f))
     }
 }
 
@@ -351,14 +354,14 @@ private fun Round(room: DuelRoom) {
                 Explanation(q)
             }
         }
-        Box(Modifier.fillMaxWidth().background(Mx.colors.card).padding(16.dp)) {
+        Box(Modifier.fillMaxWidth().background(Mx.colors.card).navigationBarsPadding().padding(horizontal = 20.dp, vertical = 14.dp)) {
             when (room.phase) {
                 DuelPhase.ASKED -> Text("Pick an answer — faster scores more.", color = Mx.colors.secondaryText)
                 DuelPhase.WAITING -> Text("Locked in. Waiting for ${room.theirName}…", color = Mx.colors.secondaryText)
                 else -> if (room.iVoted) {
                     Text(if (room.theyVoted) "Next question coming…" else "Waiting for ${room.theirName} to tap Next…", color = Mx.colors.secondaryText)
                 } else {
-                    Button(onClick = { room.voteNext() }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
+                    PrimaryButton("Next", { room.voteNext() }, modifier = Modifier.fillMaxWidth())
                 }
             }
         }
@@ -377,23 +380,62 @@ private fun Result(room: DuelRoom, onClose: () -> Unit) {
         else -> "It's a draw"
     }
     Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Icon(Icons.Filled.EmojiEvents, null, tint = Hues.orange, modifier = Modifier.height(64.dp).width(64.dp))
-        Text(verdict, fontSize = 32.sp, fontWeight = FontWeight.Black)
+        Box(Modifier.size(96.dp).clip(androidx.compose.foundation.shape.CircleShape).background(quest.srihari.medxelite.ui.theme.tint(Hues.orange)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.EmojiEvents, null, tint = Hues.orange, modifier = Modifier.size(52.dp))
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(verdict, style = MaterialTheme.typography.headlineLarge, color = Mx.colors.ink)
         Spacer(Modifier.height(20.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             listOf("You" to me, room.theirName to them).forEach { (name, sc) ->
                 Column(
-                    Modifier.clip(RoundedCornerShape(18.dp)).background(Mx.colors.card).padding(16.dp),
+                    Modifier.softShadow().clip(RoundedCornerShape(24.dp)).background(Mx.colors.card).padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(name, color = Mx.colors.secondaryText)
-                    Text("${sc.points}", fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                    Text(name, style = MaterialTheme.typography.labelLarge, color = Mx.colors.secondaryText)
+                    Text("${sc.points}", style = MaterialTheme.typography.displaySmall, color = Mx.colors.ink)
                     Text("${sc.correct} correct · ${sc.firsts} first", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
                     sc.fastest?.let { Text("fastest ${it}s", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText) }
                 }
             }
         }
         Spacer(Modifier.height(24.dp))
-        OutlinedButton(onClick = onClose) { Text("Done") }
+        PrimaryButton("Done", onClose, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun FaceoffHero() {
+    val c = Mx.colors
+    Box(
+        Modifier.padding(horizontal = 20.dp, vertical = 8.dp).fillMaxWidth()
+            .softShadow(androidx.compose.foundation.shape.RoundedCornerShape(28.dp), 14.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(28.dp))
+            .background(if (c.isDark) c.accentContainer else c.accent),
+    ) {
+        val fg = if (c.isDark) c.onAccentContainer else Color.White
+        Column(Modifier.padding(22.dp)) {
+            Box(Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).background(fg.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFFD166), modifier = Modifier.size(28.dp))
+            }
+            Spacer(Modifier.height(14.dp))
+            Text("Duel any MedX friend", style = MaterialTheme.typography.headlineSmall, color = fg)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Same questions, same 60-second clock. A right answer scores 40 plus the seconds left. Create a room and share its code, or join one.",
+                style = MaterialTheme.typography.bodyMedium, color = fg.copy(alpha = 0.85f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ScoreCard(name: String, points: Int, hue: Color, modifier: Modifier = Modifier) {
+    Row(
+        modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp)).background(quest.srihari.medxelite.ui.theme.tint(hue)).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(name, style = MaterialTheme.typography.labelLarge, color = Mx.colors.ink, maxLines = 1, modifier = Modifier.weight(1f))
+        Text("$points", style = MaterialTheme.typography.titleLarge, color = quest.srihari.medxelite.ui.theme.onTint(hue))
     }
 }

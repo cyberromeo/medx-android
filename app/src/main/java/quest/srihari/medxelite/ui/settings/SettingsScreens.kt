@@ -1,5 +1,10 @@
 package quest.srihari.medxelite.ui.settings
 
+import quest.srihari.medxelite.ui.components.Pill
+import quest.srihari.medxelite.ui.components.SegmentedTabs
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -104,41 +109,46 @@ fun SettingsScreen(nav: Navigator) {
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
                 GroupedSection {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Avatar(session, 56.dp)
-                        Spacer(Modifier.width(14.dp))
+                    Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Avatar(session, 64.dp)
+                        Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(session?.name ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text(session?.email ?: "", color = Mx.colors.secondaryText)
-                            Text(
-                                if (session?.provider == "google.com") "Signed in with Google" else "Signed in with email",
-                                style = MaterialTheme.typography.labelSmall, color = Mx.colors.tertiaryText,
-                            )
+                            Text(session?.name ?: "", style = MaterialTheme.typography.titleLarge, color = Mx.colors.ink, maxLines = 2)
+                            Text(session?.email ?: "", style = MaterialTheme.typography.bodyMedium, color = Mx.colors.secondaryText, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Spacer(Modifier.height(6.dp))
+                            Pill(if (session?.provider == "google.com") "Signed in with Google" else "Signed in with email", Mx.colors.accent)
                         }
                     }
                 }
             }
             item {
-                GroupedSection("Accent colour") {
-                    Row(Modifier.horizontalScroll(rememberScrollState()).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                GroupedSection("Accent colour", "${accent.label} · used for buttons, progress and highlights.") {
+                    Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         MedxAccent.entries.forEach { a ->
+                            val on = a == accent
                             Box(
-                                Modifier.size(36.dp).clip(CircleShape).background(Color(a.hex))
-                                    .border(if (a == accent) 3.dp else 0.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                                    .clickable { Medx.prefs.setAccent(a) },
+                                Modifier.size(48.dp).clip(CircleShape)
+                                    .clickable(role = androidx.compose.ui.semantics.Role.RadioButton) { Medx.prefs.setAccent(a) }
+                                    .semantics { contentDescription = a.label; selected = on },
                                 contentAlignment = Alignment.Center,
-                            ) { if (a == accent) Icon(Icons.Filled.Check, a.label, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                            ) {
+                                Box(
+                                    Modifier.size(40.dp)
+                                        .border(if (on) 2.dp else 0.dp, if (on) Color(a.hex) else Color.Transparent, CircleShape)
+                                        .padding(if (on) 4.dp else 2.dp).clip(CircleShape).background(Color(a.hex)),
+                                    contentAlignment = Alignment.Center,
+                                ) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                            }
                         }
                     }
                 }
             }
             item {
                 GroupedSection("Appearance") {
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(12.dp)) {
-                        MedxAppearance.entries.forEachIndexed { i, a ->
-                            SegmentedButton(appearance == a, { Medx.prefs.setAppearance(a) }, SegmentedButtonDefaults.itemShape(i, MedxAppearance.entries.size)) { Text(a.label) }
-                        }
-                    }
+                    SegmentedTabs(
+                        MedxAppearance.entries.map { it.label }, MedxAppearance.entries.indexOf(appearance),
+                        Modifier.padding(12.dp),
+                    ) { i -> Medx.prefs.setAppearance(MedxAppearance.entries[i]) }
                 }
             }
             item {
@@ -260,12 +270,19 @@ fun SyllabusTrackerScreen(nav: Navigator) {
         if (subjects.isEmpty()) { Box(Modifier.padding(pad)) { EmptyState("No subjects yet", "Your checklist appears once the subject list loads.") }; return@Scaffold }
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
-                Text("$done of $total ticked · ${maxOf(total - done, 0)} left across ${subjects.size} subjects", color = Mx.colors.secondaryText, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
+                Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    quest.srihari.medxelite.ui.components.Card {
+                        Text("$done of $total ticked", style = MaterialTheme.typography.titleLarge, color = Mx.colors.ink)
+                        Text("${maxOf(total - done, 0)} left across ${subjects.size} subjects", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
+                        Spacer(Modifier.height(14.dp))
+                        quest.srihari.medxelite.ui.components.ProgressBar(done.toFloat() / maxOf(total, 1), color = Mx.colors.correct)
+                    }
+                }
             }
             subjects.forEach { subject ->
                 item(key = subject) {
                     GroupedSection(subject) {
-                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 8.dp)) {
                             trackerFields.forEach { (key, label) ->
                                 val k = "$subject|$key"
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 2.dp)) {
