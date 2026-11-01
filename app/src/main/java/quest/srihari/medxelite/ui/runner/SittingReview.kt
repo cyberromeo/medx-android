@@ -156,7 +156,11 @@ fun SittingReview(
                     Row(Modifier.fillMaxWidth()) {
                         DotStat("$attempted", "attempted", Modifier.weight(1f), size = 34.sp)
                         if (gradable) DotStat(if (attempted > 0) "${Math.round(score * 100.0 / attempted)}%" else "--", "accuracy", Modifier.weight(1f), size = 34.sp)
-                        DotStat(formatDuration(elapsedSeconds), "time", Modifier.weight(1f), size = 34.sp)
+                        Column(Modifier.weight(1f)) {
+                            DotValue("${elapsedSeconds / 60}", "m ${"%02d".format(elapsedSeconds % 60)}s", size = 34.sp)
+                            Spacer(Modifier.height(8.dp))
+                            NLabel("time", size = 10.sp)
+                        }
                     }
                 }
             }

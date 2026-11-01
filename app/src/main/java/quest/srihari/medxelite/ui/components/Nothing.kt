@@ -48,7 +48,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -106,7 +109,12 @@ fun NLabel(
     )
 }
 
-/** Dot-matrix numerals / headings in Doto. */
+/**
+ * Dot-matrix numerals / headings in Doto. Doto's line box is 1.2em tall but its glyphs are only
+ * 0.7em (cap height, sitting on the baseline), so the box is cropped to the glyphs: big numbers
+ * then sit tight in their widgets like Nothing's NDot widgets. Avoid ":" and "." in Doto (they
+ * are drawn as crosses); use [DotValue] with a mono suffix instead.
+ */
 @Composable
 fun DotText(
     text: String,
@@ -118,13 +126,22 @@ fun DotText(
 ) {
     Text(
         text,
-        modifier = modifier,
+        modifier = modifier.layout { measurable, constraints ->
+            val p = measurable.measure(constraints)
+            val baseline = p[FirstBaseline]
+            if (maxLines != 1 || baseline == AlignmentLine.Unspecified) {
+                layout(p.width, p.height) { p.place(0, 0) }
+            } else {
+                val em = size.toPx()
+                val top = (baseline - em * 0.72f).toInt().coerceAtLeast(0)
+                val h = (em * 0.74f).toInt().coerceAtMost(p.height - top)
+                layout(p.width, h, mapOf(FirstBaseline to baseline - top, LastBaseline to baseline - top)) { p.place(0, -top) }
+            }
+        },
         color = color,
         style = TextStyle(
-            fontFamily = NType.dot, fontWeight = weight, fontSize = size, lineHeight = (size.value * 0.92f).sp, letterSpacing = 0.sp,
-            // Doto has tall ascent padding; trim it so big numerals sit tight in their widgets.
+            fontFamily = NType.dot, fontWeight = weight, fontSize = size, letterSpacing = 0.sp,
             platformStyle = PlatformTextStyle(includeFontPadding = false),
-            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
         ),
         maxLines = maxLines,
         overflow = TextOverflow.Clip,
@@ -412,7 +429,10 @@ fun DotLine(points: List<Int>, modifier: Modifier = Modifier) {
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(0.1f, 5.dp.toPx())),
             )
         }
-        val pts = points.mapIndexed { i, p -> Offset(i * step, r + (size.height - 2 * r) * (1f - p / 100f)) }
+        // Scale to the data (padded), so a 60-90% run uses the height instead of hugging the top.
+        val lo = ((points.minOrNull() ?: 0) - 10).coerceAtLeast(0).toFloat()
+        val hi = ((points.maxOrNull() ?: 100) + 10).coerceAtMost(100).toFloat().coerceAtLeast(lo + 10f)
+        val pts = points.mapIndexed { i, p -> Offset(i * step, r + (size.height - 2 * r) * (1f - (p - lo) / (hi - lo))) }
         val shown = (pts.size * reveal).roundToInt().coerceIn(1, pts.size)
         for (i in 0 until shown - 1) {
             drawLine(c.ink.copy(alpha = 0.35f), pts[i], pts[i + 1], strokeWidth = 1.dp.toPx())
@@ -525,13 +545,13 @@ fun NSearchField(
 /** A big dot-matrix value with a small mono suffix ("/ 10", "%"), baseline-ish aligned. */
 @Composable
 fun DotValue(value: String, suffix: String?, modifier: Modifier = Modifier, size: TextUnit = 56.sp, suffixColor: Color = Mx.colors.secondaryText, color: Color = Mx.colors.ink) {
-    Row(modifier, verticalAlignment = Alignment.Bottom) {
-        DotText(value, size = size, color = color)
+    Row(modifier) {
+        DotText(value, Modifier.alignByBaseline(), size = size, color = color)
         if (suffix != null) {
             Text(
                 suffix, color = suffixColor, maxLines = 1,
                 style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.3f).coerceIn(12f, 22f).sp, letterSpacing = 0.5.sp),
-                modifier = Modifier.padding(start = 6.dp),
+                modifier = Modifier.alignByBaseline().padding(start = 6.dp),
             )
         }
     }

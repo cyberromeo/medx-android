@@ -319,12 +319,12 @@ private fun Scoreboard(room: DuelRoom) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) { RecDot(); Spacer(Modifier.width(6.dp)); NLabel("You") }
-            DotText("${s[room.uid]?.points ?: 0}", size = 30.sp)
+            DotText("${s[room.uid]?.points ?: 0}", size = 38.sp)
         }
         Column(horizontalAlignment = Alignment.End) {
             NLabel(room.theirName)
             val theirUid = room.uids.firstOrNull { it != room.uid }
-            DotText("${theirUid?.let { s[it]?.points } ?: 0}", size = 30.sp, color = Mx.colors.secondaryText)
+            DotText("${theirUid?.let { s[it]?.points } ?: 0}", size = 38.sp, color = Mx.colors.secondaryText)
         }
     }
 }
@@ -346,10 +346,9 @@ private fun Round(room: DuelRoom) {
         )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
-                DotText("%02d".format(room.qIndex + 1), size = 28.sp)
-                DotText(" / ${maxOf(room.game?.total ?: 0, room.deck.size)}", size = 16.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(bottom = 3.dp))
+                quest.srihari.medxelite.ui.components.DotValue("%02d".format(room.qIndex + 1), "/ ${maxOf(room.game?.total ?: 0, room.deck.size)}", size = 34.sp)
                 Spacer(Modifier.weight(1f))
-                DotText("${room.remaining}s", size = 24.sp, color = if (room.remaining <= 10) Mx.colors.wrong else Mx.colors.ink)
+                quest.srihari.medxelite.ui.components.DotValue("${room.remaining}", "sec", size = 34.sp, color = if (room.remaining <= 10) Mx.colors.wrong else Mx.colors.ink)
             }
             Spacer(Modifier.height(6.dp))
             HtmlText(q.displayText, sizeSp = 18f, bold = true)

@@ -198,10 +198,11 @@ fun SignInScreen() {
                 }
                 Spacer(Modifier.height(36.dp))
                 DotText("MEDX", size = 84.sp)
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(14.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     DotText("ELITE", size = 84.sp, color = c.secondaryText)
-                    DotText(".", size = 84.sp, color = c.accent)
+                    Spacer(Modifier.width(10.dp))
+                    RecDot(size = 14.dp)
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(

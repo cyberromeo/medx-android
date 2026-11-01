@@ -266,16 +266,16 @@ private fun Countdown(name: String, date: LocalDate, onEdit: () -> Unit) {
                 WidgetHeader("$name countdown", trailing = {
                     NChip(date.format(DateTimeFormatter.ofPattern("d MMM yyyy")))
                 })
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(22.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     DotText("$days", size = 104.sp)
                     Spacer(Modifier.width(12.dp))
-                    Column(Modifier.padding(bottom = 18.dp)) {
+                    Column(Modifier.padding(bottom = 0.dp)) {
                         NLabel(if (days == 1L) "day" else "days", color = Mx.colors.ink, size = 13.sp)
                         NLabel("to go", size = 13.sp)
                     }
                 }
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(22.dp))
                 DotProgress(runUp, dots = 30, dotSize = 6.dp)
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {

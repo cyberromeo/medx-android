@@ -179,7 +179,7 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
 /** 12,345 -> "12.3K" so big counts fit a dot-matrix stat. */
 fun compactCount(n: Int): String = when {
     n >= 100_000 -> "${n / 1000}K"
-    n >= 10_000 -> "%.1fK".format(n / 1000.0)
+    n >= 10_000 -> "${n / 1000}K"
     else -> n.toString()
 }
 
