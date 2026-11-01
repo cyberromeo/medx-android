@@ -1,5 +1,20 @@
 package quest.srihari.medxelite.ui.settings
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import quest.srihari.medxelite.ui.components.DotDivider
+import quest.srihari.medxelite.ui.components.DotProgress
+import quest.srihari.medxelite.ui.components.DotStat
+import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.NChip
+import quest.srihari.medxelite.ui.components.NLabel
+import quest.srihari.medxelite.ui.components.NSegmented
+import quest.srihari.medxelite.ui.components.NWidget
+import quest.srihari.medxelite.ui.components.WidgetHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,16 +35,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Checklist
+import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.TrackChanges
+import androidx.compose.material.icons.outlined.Vibration
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -103,57 +118,76 @@ fun SettingsScreen(nav: Navigator) {
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar("Settings", onBack = nav::back) }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
-                GroupedSection {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Avatar(session, 56.dp)
-                        Spacer(Modifier.width(14.dp))
+                NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Avatar(session, 60.dp)
+                        Spacer(Modifier.width(16.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(session?.name ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                            Text(session?.email ?: "", color = Mx.colors.secondaryText)
-                            Text(
-                                if (session?.provider == "google.com") "Signed in with Google" else "Signed in with email",
-                                style = MaterialTheme.typography.labelSmall, color = Mx.colors.tertiaryText,
-                            )
+                            Text(session?.name ?: "", style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(session?.email ?: "", color = Mx.colors.secondaryText, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Spacer(Modifier.height(6.dp))
+                            NChip(if (session?.provider == "google.com") "Google account" else "Email account")
                         }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    DotDivider()
+                    Spacer(Modifier.height(14.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        DotStat("${stats.sittings}", "sittings", Modifier.weight(1f), size = 26.sp)
+                        DotStat(stats.overallAccuracy?.let { "$it%" } ?: "--", "accuracy", Modifier.weight(1f), size = 26.sp)
+                        DotStat("${stats.streakDays}", "day streak", Modifier.weight(1f), size = 26.sp)
                     }
                 }
             }
             item {
-                GroupedSection("Accent colour") {
-                    Row(Modifier.horizontalScroll(rememberScrollState()).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        MedxAccent.entries.forEach { a ->
+                // Nothing keeps one accent; offer a short list, plus whatever older choice is saved.
+                val offered = (listOf(MedxAccent.RED, MedxAccent.ORANGE, MedxAccent.GREEN, MedxAccent.BLUE, MedxAccent.GRAPHITE) + accent).distinct()
+                GroupedSection("Accent", "Used sparingly: active states, live dots and key numbers. ${accent.label} selected.") {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        offered.forEach { a ->
+                            val on = a == accent
                             Box(
-                                Modifier.size(36.dp).clip(CircleShape).background(Color(a.hex))
-                                    .border(if (a == accent) 3.dp else 0.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                                    .clickable { Medx.prefs.setAccent(a) },
+                                Modifier.size(48.dp).clip(CircleShape)
+                                    .border(if (on) 1.5.dp else 0.dp, if (on) Mx.colors.ink else Color.Transparent, CircleShape)
+                                    .clickable { Medx.prefs.setAccent(a) }
+                                    .semantics { contentDescription = a.label },
                                 contentAlignment = Alignment.Center,
-                            ) { if (a == accent) Icon(Icons.Filled.Check, a.label, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                            ) {
+                                Box(Modifier.size(if (on) 30.dp else 26.dp).clip(CircleShape).background(Color(a.hex)), contentAlignment = Alignment.Center) {
+                                    if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Color.White))
+                                }
+                            }
                         }
                     }
                 }
             }
             item {
-                GroupedSection("Appearance") {
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(12.dp)) {
-                        MedxAppearance.entries.forEachIndexed { i, a ->
-                            SegmentedButton(appearance == a, { Medx.prefs.setAppearance(a) }, SegmentedButtonDefaults.itemShape(i, MedxAppearance.entries.size)) { Text(a.label) }
-                        }
-                    }
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    NLabel("Appearance", Modifier.padding(start = 6.dp, bottom = 8.dp))
+                    NSegmented(listOf(MedxAppearance.DARK, MedxAppearance.LIGHT, MedxAppearance.SYSTEM), appearance, { it.label }, { Medx.prefs.setAppearance(it) })
                 }
             }
             item {
                 GroupedSection("Study") {
-                    MedxRow("Daily goal", icon = Icons.Filled.TrackChanges, iconTint = Hues.orange, trailing = "$goal questions") { editGoal = true }
-                    MedxRow("Syllabus checklist", icon = Icons.Filled.Checklist, iconTint = Hues.green) { nav.go("tracker") }
+                    MedxRow("Daily goal", icon = Icons.Outlined.TrackChanges, iconTint = Hues.orange, trailing = "$goal questions") { editGoal = true }
+                    MedxRow("Syllabus checklist", icon = Icons.Outlined.Checklist, iconTint = Hues.green) { nav.go("tracker") }
                     MedxRow(
-                        "Haptics", icon = Icons.Filled.Vibration, iconTint = Hues.pink, showChevron = false, divider = false,
-                        trailingContent = { Switch(haptics, { Medx.prefs.setHaptics(it) }) },
+                        "Haptics", icon = Icons.Outlined.Vibration, iconTint = Hues.pink, showChevron = false, divider = false,
+                        trailingContent = {
+                            Switch(
+                                haptics, { Medx.prefs.setHaptics(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedTrackColor = Mx.colors.accent, checkedThumbColor = Color.White, checkedBorderColor = Mx.colors.accent,
+                                    uncheckedTrackColor = Mx.colors.raised, uncheckedThumbColor = Mx.colors.secondaryText, uncheckedBorderColor = Mx.colors.separator,
+                                ),
+                            )
+                        },
                     )
                 }
             }
             item {
                 GroupedSection("Sync", "${stats.sittings} sittings on your account" + if (pending > 0) " · $pending waiting to upload" else "") {
-                    MedxRow(if (syncing) "Syncing…" else "Sync now", icon = Icons.Filled.Sync, iconTint = Hues.blue, showChevron = false) {
+                    MedxRow(if (syncing) "Syncing…" else "Sync now", icon = Icons.Outlined.Sync, iconTint = Hues.blue, showChevron = false) {
                         Medx.cache.markAllStale()
                         scope.launch { Medx.attempts.refresh() }
                         scope.launch { Medx.activity.sync() }
@@ -162,7 +196,7 @@ fun SettingsScreen(nav: Navigator) {
                     MedxRow(
                         if (cleared) "Cache cleared" else "Clear downloaded content",
                         "${Medx.cache.sizeBytes() / 1024} KB of modules, papers and lists kept for offline",
-                        icon = Icons.Filled.CleaningServices, iconTint = Hues.gray, showChevron = false, divider = false,
+                        icon = Icons.Outlined.CleaningServices, iconTint = Hues.gray, showChevron = false, divider = false,
                     ) {
                         Medx.cache.clear()
                         cleared = true
@@ -171,19 +205,19 @@ fun SettingsScreen(nav: Navigator) {
             }
             item {
                 GroupedSection("About") {
-                    MedxRow("MedX on the web", Config.WEB_APP_URL.removePrefix("https://"), icon = Icons.Filled.Language, iconTint = Hues.teal) {
+                    MedxRow("MedX on the web", Config.WEB_APP_URL.removePrefix("https://"), icon = Icons.Outlined.Language, iconTint = Hues.teal) {
                         openCustomTab(context, Config.WEB_APP_URL)
                     }
-                    MedxRow("Version", icon = Icons.Filled.Code, iconTint = Hues.indigo, trailing = BuildConfig.VERSION_NAME, showChevron = false)
+                    MedxRow("Version", icon = Icons.Outlined.Code, iconTint = Hues.indigo, trailing = BuildConfig.VERSION_NAME, showChevron = false)
                     MedxRow(
                         "Backend", "Project ${Config.PROJECT_ID} · ${FirebaseBridge.status} · Google sign-in ${if (GoogleSignIn.isConfigured) "configured" else "not configured"}",
-                        icon = Icons.Filled.Cloud, iconTint = Hues.blue, showChevron = false, divider = false,
+                        icon = Icons.Outlined.Cloud, iconTint = Hues.blue, showChevron = false, divider = false,
                     )
                 }
             }
             item {
                 GroupedSection {
-                    MedxRow("Sign out", icon = Icons.AutoMirrored.Filled.Logout, iconTint = Mx.colors.wrong, titleColor = Mx.colors.wrong, showChevron = false, divider = false) {
+                    MedxRow("Sign out", icon = Icons.AutoMirrored.Outlined.Logout, iconTint = Mx.colors.wrong, titleColor = Mx.colors.wrong, showChevron = false, divider = false) {
                         confirmSignOut = true
                     }
                 }
@@ -260,22 +294,43 @@ fun SyllabusTrackerScreen(nav: Navigator) {
         if (subjects.isEmpty()) { Box(Modifier.padding(pad)) { EmptyState("No subjects yet", "Your checklist appears once the subject list loads.") }; return@Scaffold }
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
-                Text("$done of $total ticked · ${maxOf(total - done, 0)} left across ${subjects.size} subjects", color = Mx.colors.secondaryText, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
+                NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                    WidgetHeader("Syllabus", trailing = { NLabel("${subjects.size} subjects") })
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        DotText("$done", size = 52.sp)
+                        DotText("/$total", size = 24.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    DotProgress(done.toFloat() / maxOf(total, 1), dots = 32, dotSize = 5.dp)
+                    Spacer(Modifier.height(10.dp))
+                    Text("${maxOf(total - done, 0)} left to tick", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
+                }
             }
             subjects.forEach { subject ->
                 item(key = subject) {
                     GroupedSection(subject) {
-                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                             trackerFields.forEach { (key, label) ->
                                 val k = "$subject|$key"
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 2.dp)) {
-                                    Checkbox(ticks[k] == true, { value ->
-                                        ticks[k] = value
-                                        scope.launch {
-                                            runCatching { Medx.fs.updateTrackerCell(uid, subject, key, value) }.onFailure { ticks[k] = !value }
-                                        }
-                                    })
-                                    Text(label, style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
+                                    val on = ticks[k] == true
+                                    Box(
+                                        Modifier.size(48.dp).clip(CircleShape).toggleable(on, role = androidx.compose.ui.semantics.Role.Checkbox) { value ->
+                                            ticks[k] = value
+                                            scope.launch {
+                                                runCatching { Medx.fs.updateTrackerCell(uid, subject, key, value) }.onFailure { ticks[k] = !value }
+                                            }
+                                        },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Box(
+                                            Modifier.size(26.dp).clip(CircleShape).background(if (on) Mx.colors.ink else Color.Transparent)
+                                                .border(1.5.dp, if (on) Mx.colors.ink else Mx.colors.separator, CircleShape),
+                                            contentAlignment = Alignment.Center,
+                                        ) { if (on) Icon(Icons.Outlined.Check, null, tint = Mx.colors.onInk, modifier = Modifier.size(16.dp)) }
+                                    }
+                                    NLabel(label, size = 9.5.sp)
                                 }
                             }
                         }

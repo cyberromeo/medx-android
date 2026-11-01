@@ -1,5 +1,14 @@
 package quest.srihari.medxelite.ui.flashcards
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import android.content.res.Configuration
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -8,8 +17,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,8 +29,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Style
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -107,7 +114,7 @@ fun FlashcardDeckScreen(nav: Navigator, subjectId: Int) {
             return@Scaffold
         }
         if (subject.cards.isEmpty()) {
-            Box(Modifier.padding(pad)) { EmptyState("No cards", "There are no flashcards to display.", icon = Icons.Filled.Style) }
+            Box(Modifier.padding(pad)) { EmptyState("No cards", "There are no flashcards to display.", icon = Icons.Outlined.Style) }
             return@Scaffold
         }
         LazyVerticalGrid(
@@ -119,17 +126,18 @@ fun FlashcardDeckScreen(nav: Navigator, subjectId: Int) {
         ) {
             itemsIndexed(subject.cards, key = { i, c -> "${c.id}-$i" }) { i, card ->
                 Column(
-                    Modifier.clip(RoundedCornerShape(14.dp)).background(Mx.colors.card).clickable { openAt = i },
+                    Modifier.clip(RoundedCornerShape(20.dp)).background(Mx.colors.card).border(1.dp, Mx.colors.hairline, RoundedCornerShape(20.dp)).clickable { openAt = i },
                 ) {
                     AsyncImage(
                         card.imageUrl(landscape = false, tablet = tablet), card.name,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(Mx.colors.separator),
+                        modifier = Modifier.fillMaxWidth().aspectRatio(3f / 4f).background(Mx.colors.raised),
                     )
-                    Text(
-                        "${i + 1}. ${card.name}", style = MaterialTheme.typography.labelMedium, maxLines = 2,
-                        modifier = Modifier.padding(8.dp), fontWeight = FontWeight.Medium,
-                    )
+                    Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.Top) {
+                        Text("%02d".format(i + 1), style = MaterialTheme.typography.labelMedium, color = Mx.colors.accent)
+                        Spacer(Modifier.width(8.dp))
+                        Text(card.name, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
         }
@@ -157,15 +165,22 @@ private fun DeckPager(cards: List<FlashcardCard>, start: Int, landscape: Boolean
         }
         if (chrome) {
             Row(
-                Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.4f)).padding(top = 28.dp, start = 8.dp, end = 16.dp, bottom = 8.dp),
+                Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.6f)).statusBarsPadding().padding(start = 12.dp, end = 16.dp, top = 8.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, "Close", tint = Color.White) }
+                Box(
+                    Modifier.size(48.dp).clip(CircleShape).background(Color(0xFF111111)).border(1.dp, Color(0xFF2A2A2A), CircleShape).clickable(onClick = onClose),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Outlined.Close, "Close", tint = Color.White, modifier = Modifier.size(20.dp)) }
+                Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(cards[pager.currentPage].name, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                    cards[pager.currentPage].chapter?.let { Text(it, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall, maxLines = 1) }
+                    Text(cards[pager.currentPage].name, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    cards[pager.currentPage].chapter?.let { Text(it.uppercase(), color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall, maxLines = 1) }
                 }
-                Text("${pager.currentPage + 1} of ${cards.size}", color = Color.White)
+                Text(
+                    "${pager.currentPage + 1}/${cards.size}", color = Color.White,
+                    style = androidx.compose.ui.text.TextStyle(fontFamily = quest.srihari.medxelite.ui.theme.NType.dot, fontWeight = FontWeight.Black, fontSize = 22.sp),
+                )
             }
         }
         Spacer(Modifier.height(0.dp))

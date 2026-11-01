@@ -1,18 +1,27 @@
 package quest.srihari.medxelite.ui.tests
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.unit.sp
+import quest.srihari.medxelite.ui.components.DotStat
+import quest.srihari.medxelite.ui.components.NSegmented
+import quest.srihari.medxelite.ui.components.NWidget
+import quest.srihari.medxelite.ui.components.WidgetHeader
+import quest.srihari.medxelite.ui.qbank.compactCount
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -79,7 +88,7 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             MedxTopBar("Tests", large = true, scrollBehavior = scroll, actions = {
-                IconButton(onClick = { nav.go("batch") }) { Icon(Icons.Filled.FolderOpen, "Batch papers") }
+                IconButton(onClick = { nav.go("batch") }) { Icon(Icons.Outlined.FolderOpen, "Batch papers") }
             })
         },
     ) { pad ->
@@ -98,19 +107,21 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     }
                     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
-                            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                SeriesGroup.entries.forEachIndexed { i, g ->
-                                    SegmentedButton(group == g, { group = g }, SegmentedButtonDefaults.itemShape(i, SeriesGroup.entries.size)) {
-                                        Text("${g.label} (${s.value.count { it.group == g }})")
-                                    }
+                            val done = s.value.count { bySource.containsKey(it.id) }
+                            NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                                WidgetHeader("Marrow FMGE test series")
+                                Spacer(Modifier.height(14.dp))
+                                Row(Modifier.fillMaxWidth()) {
+                                    DotStat("${s.value.size}", "papers", Modifier.weight(1f), size = 30.sp)
+                                    DotStat(compactCount(s.value.sumOf { it.questions }), "questions", Modifier.weight(1.2f), size = 30.sp)
+                                    DotStat("$done", "attempted", Modifier.weight(1f), size = 30.sp, color = if (done > 0) Mx.colors.accent else Mx.colors.ink)
                                 }
                             }
                         }
                         item {
-                            Text(
-                                "MARROW FMGE TEST SERIES · ${s.value.size} papers · ${"%,d".format(s.value.sumOf { it.questions })} questions",
-                                style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                            NSegmented(
+                                SeriesGroup.entries, group, { g -> "${g.label} ${s.value.count { it.group == g }}" }, { group = it },
+                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                             )
                         }
                         if (papers.isEmpty()) item { EmptyState("Nothing here yet", "No papers in this group.") }
@@ -123,9 +134,9 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                                             title = p.title,
                                             subtitle = p.line + (best?.let { " · best ${it.score}/${it.total}" } ?: ""),
                                             icon = when (p.group) {
-                                                SeriesGroup.GRAND -> Icons.Filled.EmojiEvents
-                                                SeriesGroup.MINI -> Icons.Filled.Bolt
-                                                SeriesGroup.SUBJECT -> Icons.Filled.MenuBook
+                                                SeriesGroup.GRAND -> Icons.Outlined.EmojiEvents
+                                                SeriesGroup.MINI -> Icons.Outlined.Bolt
+                                                SeriesGroup.SUBJECT -> Icons.Outlined.MenuBook
                                             },
                                             iconTint = when (p.group) {
                                                 SeriesGroup.GRAND -> Hues.orange
@@ -189,7 +200,7 @@ fun BatchPapersScreen(nav: Navigator) {
                                         subtitle = "${t.questionCount} q · ${t.officialTimeMins} min" +
                                             (if (!t.gradable) " · no answer key" else "") +
                                             (best?.let { " · best ${it.score}/${it.total}" } ?: ""),
-                                        icon = Icons.Filled.Description,
+                                        icon = Icons.Outlined.Description,
                                         iconTint = if (t.gradable) Hues.blue else Hues.gray,
                                         divider = i < list.size - 1,
                                     ) { pick = t }

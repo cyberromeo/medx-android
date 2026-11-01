@@ -1,15 +1,20 @@
 package quest.srihari.medxelite.ui.library
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.NWidget
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,18 +28,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LibraryBooks
-import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Style
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.ListAlt
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Style
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -88,7 +93,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-private data class Feature(val title: String, val subtitle: String, val icon: ImageVector, val hue: Color, val route: String)
+private data class Feature(val title: String, val subtitle: String, val icon: ImageVector, val hue: Color, val route: String, val count: Int? = null)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,15 +104,15 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val custom by Medx.custom.modules.collectAsState()
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val features = listOf(
-        Feature("Flashcards", "Image decks by subject", Icons.Filled.Style, Hues.purple, "flashcards"),
-        Feature("Search", "Find any module", Icons.Filled.Search, Hues.blue, "search"),
-        Feature("Custom modules", "${custom.size} built", Icons.Filled.Tune, Hues.indigo, "custom"),
-        Feature("Bookmarks", "${bookmarks.size} saved", Icons.Filled.Bookmark, Hues.orange, "bookmarks"),
-        Feature("Batch papers", "ARISE tests", Icons.Filled.Description, Hues.teal, "batch"),
-        Feature("VOD feed", "Newest recordings", Icons.Filled.VideoLibrary, Hues.pink, "vod"),
-        Feature("Faceoff", "Duel a friend", Icons.Filled.Bolt, Hues.yellow, "faceoff"),
-        Feature("Watch history", "${history.size} classes", Icons.Filled.History, Hues.green, "history"),
-        Feature("Activity log", "${attempts.size} sittings", Icons.Filled.ListAlt, Hues.gray, "activity"),
+        Feature("Flashcards", "Image decks by subject", Icons.Outlined.Style, Hues.purple, "flashcards"),
+        Feature("Search", "Find any module", Icons.Outlined.Search, Hues.blue, "search"),
+        Feature("Custom modules", "${custom.size} built", Icons.Outlined.Tune, Hues.indigo, "custom", custom.size),
+        Feature("Bookmarks", "${bookmarks.size} saved", Icons.Outlined.BookmarkBorder, Hues.orange, "bookmarks", bookmarks.size),
+        Feature("Batch papers", "ARISE tests", Icons.Outlined.Description, Hues.teal, "batch"),
+        Feature("VOD feed", "Newest recordings", Icons.Outlined.VideoLibrary, Hues.pink, "vod"),
+        Feature("Faceoff", "Duel a friend", Icons.Outlined.Bolt, Hues.yellow, "faceoff"),
+        Feature("Watch history", "${history.size} classes", Icons.Outlined.History, Hues.green, "history", history.size),
+        Feature("Activity log", "${attempts.size} sittings", Icons.Outlined.ListAlt, Hues.gray, "activity", attempts.size),
     )
     Scaffold(
         modifier = modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -117,19 +122,22 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
     ) { pad ->
         LazyVerticalGrid(
             GridCells.Adaptive(160.dp),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(pad),
         ) {
             items(features) { f ->
-                Column(
-                    Modifier.clip(RoundedCornerShape(18.dp)).background(Mx.colors.card).clickable { nav.go(f.route) }.padding(14.dp),
-                ) {
-                    IconTile(f.icon, f.hue, 36.dp)
-                    Spacer(Modifier.height(18.dp))
-                    Text(f.title, fontWeight = FontWeight.SemiBold)
-                    Text(f.subtitle, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, maxLines = 1)
+                NWidget(Modifier.fillMaxWidth().height(156.dp), onClick = { nav.go(f.route) }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconTile(f.icon, if (f.route == "faceoff") Mx.colors.accent else Mx.colors.ink, 42.dp)
+                        Spacer(Modifier.weight(1f))
+                        if (f.count != null) DotText("${f.count}", size = 26.sp, color = if (f.count > 0) Mx.colors.ink else Mx.colors.tertiaryText)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text(f.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(2.dp))
+                    Text(f.subtitle, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -165,7 +173,7 @@ fun BookmarksScreen(nav: Navigator) {
                         val qs = bookmarks.map { it.question }
                         nav.startSitting(RunnerPayload("custom", "bookmarks", "Bookmarked questions", "Bookmarks", SittingMode.REVISION, questions = qs, questionTags = bookmarks.map { it.sourceName }))
                     }) { Text("Practise") }
-                    IconButton(onClick = { confirmClear = true }) { Icon(Icons.Filled.Delete, "Clear all") }
+                    IconButton(onClick = { confirmClear = true }) { Icon(Icons.Outlined.Delete, "Clear all") }
                 }
             })
         },
@@ -226,12 +234,12 @@ fun WatchHistoryScreen(nav: Navigator) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             MedxTopBar("Watch history", onBack = nav::back, actions = {
-                if (history.isNotEmpty()) IconButton(onClick = { confirmClear = true }) { Icon(Icons.Filled.Delete, "Clear history") }
+                if (history.isNotEmpty()) IconButton(onClick = { confirmClear = true }) { Icon(Icons.Outlined.Delete, "Clear history") }
             })
         },
     ) { pad ->
         if (history.isEmpty()) {
-            Box(Modifier.padding(pad)) { EmptyState("Nothing watched yet", "Classes you play show up here with where you left off.", icon = Icons.Filled.History) }
+            Box(Modifier.padding(pad)) { EmptyState("Nothing watched yet", "Classes you play show up here with where you left off.", icon = Icons.Outlined.History) }
             return@Scaffold
         }
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
@@ -264,7 +272,7 @@ fun ActivityLogScreen(nav: Navigator) {
     LaunchedEffect(Unit) { Medx.attempts.refresh() }
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar("Activity log", onBack = nav::back) }) { pad ->
         if (attempts.isEmpty()) {
-            Box(Modifier.padding(pad)) { EmptyState("No sittings yet", "Finished QBank modules, tests and duels are listed here.", icon = Icons.Filled.ListAlt) }
+            Box(Modifier.padding(pad)) { EmptyState("No sittings yet", "Finished QBank modules, tests and duels are listed here.", icon = Icons.Outlined.ListAlt) }
             return@Scaffold
         }
         val byDay = attempts.groupBy { a ->
@@ -287,11 +295,11 @@ fun ActivityLogScreen(nav: Navigator) {
                                 subtitle = "${AttemptKind.label(a.kind)} · ${if (a.mode == "exam") "Exam" else "Revision"} · $time" +
                                     if (Medx.attempts.isPending(a)) " · waiting to sync" else "",
                                 icon = when (a.kind) {
-                                    "qbank" -> Icons.Filled.LibraryBooks
-                                    "series" -> Icons.Filled.EmojiEvents
-                                    "duel" -> Icons.Filled.Bolt
-                                    "custom" -> Icons.Filled.Tune
-                                    else -> Icons.Filled.Description
+                                    "qbank" -> Icons.Outlined.LibraryBooks
+                                    "series" -> Icons.Outlined.EmojiEvents
+                                    "duel" -> Icons.Outlined.Bolt
+                                    "custom" -> Icons.Outlined.Tune
+                                    else -> Icons.Outlined.Description
                                 },
                                 iconTint = Hues.forName(a.kind),
                                 trailing = if (a.gradable == false) "${a.attempted}/${a.total}" else "${a.score}/${a.total}",
@@ -299,7 +307,7 @@ fun ActivityLogScreen(nav: Navigator) {
                                 divider = i < list.size - 1,
                                 trailingContent = {
                                     IconButton(onClick = { deleting = a }, modifier = Modifier.size(32.dp)) {
-                                        Icon(Icons.Filled.Delete, "Delete", tint = Mx.colors.tertiaryText, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Outlined.Delete, "Delete", tint = Mx.colors.tertiaryText, modifier = Modifier.size(18.dp))
                                     }
                                 },
                             ) {

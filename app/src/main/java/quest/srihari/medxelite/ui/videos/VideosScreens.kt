@@ -1,12 +1,20 @@
 package quest.srihari.medxelite.ui.videos
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.unit.sp
+import quest.srihari.medxelite.ui.components.DotStat
+import quest.srihari.medxelite.ui.components.NWidget
+import quest.srihari.medxelite.ui.components.WidgetHeader
+import quest.srihari.medxelite.ui.components.DotProgress
+import quest.srihari.medxelite.ui.components.NSearchField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -15,10 +23,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -90,8 +98,8 @@ fun VideosScreen(nav: Navigator, modifier: Modifier = Modifier) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             MedxTopBar("Classes", large = true, scrollBehavior = scroll, actions = {
-                IconButton(onClick = { nav.go("history") }) { Icon(Icons.Filled.History, "Watch history") }
-                IconButton(onClick = { nav.go("vod") }) { Icon(Icons.Filled.VideoLibrary, "VOD feed") }
+                IconButton(onClick = { nav.go("history") }) { Icon(Icons.Outlined.History, "Watch history") }
+                IconButton(onClick = { nav.go("vod") }) { Icon(Icons.Outlined.VideoLibrary, "VOD feed") }
             })
         },
     ) { pad ->
@@ -117,11 +125,20 @@ fun VideosScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     }
                     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
-                            OutlinedTextField(
-                                query, { query = it }, placeholder = { Text("Search classes, subjects, faculty") },
-                                singleLine = true, shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                            )
+                            val all = s.value
+                            val watched = all.count { v -> history.any { it.video.id == v.id && it.isCompleted } }
+                            NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                                WidgetHeader("Recorded classes")
+                                Spacer(Modifier.height(14.dp))
+                                Row(Modifier.fillMaxWidth()) {
+                                    DotStat("${all.size}", "classes", Modifier.weight(1f), size = 30.sp)
+                                    DotStat("${all.sumOf { it.durationSeconds ?: 0 } / 3600}h", "of video", Modifier.weight(1f), size = 30.sp)
+                                    DotStat("$watched", "watched", Modifier.weight(1f), size = 30.sp)
+                                }
+                            }
+                        }
+                        item {
+                            NSearchField(query, { query = it }, "Search classes, subjects, faculty", Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                         }
                         if (batches.isEmpty()) item { EmptyState("No classes", if (query.isBlank()) "Nothing has been published yet." else "No class matches “$query”.") }
                         batches.forEach { (bId, pair) ->
@@ -172,13 +189,13 @@ fun VideoRow(v: RecordedVideo, progress: Double?, completed: Boolean, divider: B
     MedxRow(
         title = v.displayTitle,
         subtitle = listOfNotNull(v.faculty, v.formattedDuration.ifBlank { null }).joinToString(" · "),
-        icon = if (completed) Icons.Filled.CheckCircle else Icons.Filled.PlayArrow,
+        icon = if (completed) Icons.Outlined.CheckCircle else Icons.Outlined.PlayArrow,
         iconTint = if (completed) Hues.green else Mx.colors.accent,
         divider = divider,
         showChevron = false,
         trailingContent = {
             if (progress != null && progress > 0 && !completed) {
-                LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.width(48.dp))
+                DotProgress(progress.toFloat(), Modifier.width(56.dp), dots = 7, dotSize = 5.dp, animate = false)
             }
         },
         onClick = onClick,
@@ -231,10 +248,10 @@ fun VodFeedScreen(nav: Navigator) {
                             if (v.durationSeconds > 0) hours(v.durationSeconds) else null,
                         ).joinToString(" · "),
                         leading = {
-                            Box(Modifier.size(width = 72.dp, height = 44.dp).clip(RoundedCornerShape(8.dp)).background(Mx.colors.separator), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(width = 76.dp, height = 46.dp).clip(RoundedCornerShape(12.dp)).background(Mx.colors.raised), contentAlignment = Alignment.Center) {
                                 if (v.thumbnailUrl.isNotBlank()) {
                                     AsyncImage(v.thumbnailUrl, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                } else Icon(Icons.Filled.PlayArrow, null, tint = Mx.colors.secondaryText)
+                                } else Icon(Icons.Outlined.PlayArrow, null, tint = Mx.colors.secondaryText)
                             }
                         },
                         showChevron = false,

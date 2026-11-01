@@ -1,5 +1,15 @@
 package quest.srihari.medxelite.ui.videos
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.sp
+import quest.srihari.medxelite.ui.components.NLabel
+import quest.srihari.medxelite.ui.components.RecDot
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.net.Uri
@@ -13,8 +23,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.ScreenRotation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -171,19 +181,43 @@ fun PlayerScreen(nav: Navigator, video: RecordedVideo?) {
             },
             modifier = Modifier.fillMaxSize(),
         )
-        Column(Modifier.statusBarsPadding().padding(4.dp)) {
+        Column(Modifier.statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
             androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { nav.back() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
-                Text(video.displayTitle, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, modifier = Modifier.weight(1f))
-                IconButton(onClick = {
+                ChromeButton(Icons.AutoMirrored.Outlined.ArrowBack, "Back") { nav.back() }
+                androidx.compose.foundation.layout.Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                        RecDot(size = 6.dp)
+                        androidx.compose.foundation.layout.Spacer(Modifier.width(6.dp))
+                        NLabel(video.subject.ifBlank { "Class" }, color = Color.White.copy(alpha = 0.75f), size = 10.sp)
+                    }
+                    Text(video.displayTitle, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                }
+                androidx.compose.foundation.layout.Spacer(Modifier.width(12.dp))
+                ChromeButton(Icons.Outlined.ScreenRotation, "Rotate") {
                     activity?.requestedOrientation =
                         if (activity?.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                         else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                }) { Icon(Icons.Filled.ScreenRotation, "Rotate", tint = Color.White) }
+                }
             }
         }
         error?.let {
             Text(it, color = Color.White, modifier = Modifier.align(Alignment.Center).padding(32.dp))
         }
     }
+}
+
+/** Player chrome button: black disc with a hairline ring, white thin icon. */
+@Composable
+private fun ChromeButton(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, onClick: () -> Unit) {
+    androidx.compose.foundation.layout.Box(
+        Modifier
+            .size(48.dp)
+            .clip(androidx.compose.foundation.shape.CircleShape)
+            .background(Color.Black.copy(alpha = 0.6f))
+            .border(1.dp, Color.White.copy(alpha = 0.18f), androidx.compose.foundation.shape.CircleShape)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, null, tint = Color.White, modifier = Modifier.size(20.dp)) }
 }

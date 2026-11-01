@@ -1,5 +1,8 @@
 package quest.srihari.medxelite.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -11,9 +14,31 @@ import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import quest.srihari.medxelite.ui.theme.Mx
+import quest.srihari.medxelite.ui.theme.NType
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -94,29 +119,21 @@ fun AppRoot() {
     val nav = rememberNavController()
     val navigator = Navigator(nav)
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
+    val still = Mx.reduceMotion
 
     NavHost(
         navController = nav,
         startDestination = "tabs",
-        enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
-        exitTransition = { fadeOut() },
-        popEnterTransition = { fadeIn() },
-        popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+        // Quick, mechanical: a short slide + fade; nothing at all when animations are removed.
+        enterTransition = { if (still) EnterTransition.None else slideInHorizontally(tween(220)) { it / 8 } + fadeIn(tween(160)) },
+        exitTransition = { if (still) ExitTransition.None else fadeOut(tween(120)) },
+        popEnterTransition = { if (still) EnterTransition.None else fadeIn(tween(160)) },
+        popExitTransition = { if (still) ExitTransition.None else slideOutHorizontally(tween(200)) { it / 8 } + fadeOut(tween(140)) },
     ) {
         composable("tabs") {
             Scaffold(
-                bottomBar = {
-                    NavigationBar {
-                        Tab.entries.forEach { t ->
-                            NavigationBarItem(
-                                selected = tab == t,
-                                onClick = { tab = t },
-                                icon = { Icon(t.icon, null) },
-                                label = { Text(t.label) },
-                            )
-                        }
-                    }
-                },
+                containerColor = quest.srihari.medxelite.ui.theme.Mx.colors.groupedBackground,
+                bottomBar = { NothingTabBar(tab) { tab = it } },
             ) { padding ->
                 val m = Modifier.padding(bottom = padding.calculateBottomPadding())
                 when (tab) {
@@ -145,5 +162,41 @@ fun AppRoot() {
         composable("settings") { SettingsScreen(navigator) }
         composable("tracker") { SyllabusTrackerScreen(navigator) }
         composable("faceoff") { FaceoffScreen(navigator) }
+    }
+}
+
+/** Minimal black tab bar: thin line icons, mono labels, a red dot under the active tab. */
+@Composable
+private fun NothingTabBar(current: Tab, onSelect: (Tab) -> Unit) {
+    val c = Mx.colors
+    Column(Modifier.fillMaxWidth().background(c.groupedBackground)) {
+        HorizontalDivider(color = c.hairline, thickness = 1.dp)
+        Row(
+            Modifier.fillMaxWidth().navigationBarsPadding().heightIn(min = 68.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Tab.entries.forEach { t ->
+                val active = t == current
+                val tint = if (active) c.ink else c.tertiaryText
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = 64.dp)
+                        .selectable(selected = active, role = Role.Tab, onClick = { onSelect(t) }),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(t.icon, null, tint = tint, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.height(5.dp))
+                    Text(
+                        t.label, color = tint, maxLines = 1,
+                        style = TextStyle(fontFamily = NType.mono, fontSize = 10.5.sp, letterSpacing = 0.6.sp, lineHeight = 13.sp),
+                    )
+                    Spacer(Modifier.height(5.dp))
+                    Box(Modifier.size(5.dp).clip(CircleShape).background(if (active) c.accent else Color.Transparent))
+                }
+            }
+        }
     }
 }

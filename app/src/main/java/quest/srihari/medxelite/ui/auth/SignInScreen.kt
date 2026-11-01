@@ -1,5 +1,16 @@
 package quest.srihari.medxelite.ui.auth
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.draw.drawWithContent
+import quest.srihari.medxelite.ui.components.DotDivider
+import quest.srihari.medxelite.ui.components.DotGrid
+import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.NLabel
+import quest.srihari.medxelite.ui.components.RecDot
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,8 +33,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -150,14 +161,24 @@ fun SignInScreen() {
         }
     }
 
-    val accent = Mx.colors.accent
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(accent.copy(alpha = 0.18f), Mx.colors.groupedBackground, Mx.colors.groupedBackground)),
-            ),
-    ) {
+    val c = Mx.colors
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = c.ink, unfocusedBorderColor = c.separator,
+        focusedContainerColor = c.card, unfocusedContainerColor = c.card,
+        focusedLabelColor = c.ink, unfocusedLabelColor = c.secondaryText, cursorColor = c.accent,
+    )
+    val fieldShape = RoundedCornerShape(20.dp)
+    Box(Modifier.fillMaxSize().background(c.groupedBackground)) {
+        // Dot-matrix field fading out behind the wordmark.
+        DotGrid(
+            Modifier.fillMaxWidth().height(340.dp).drawWithContent {
+                drawContent()
+                drawRect(
+                    Brush.verticalGradient(listOf(Color.Transparent, c.groupedBackground), startY = size.height * 0.35f),
+                )
+            },
+            spacing = 16.dp, dot = 2.dp,
+        )
         Column(
             Modifier
                 .fillMaxSize()
@@ -165,28 +186,37 @@ fun SignInScreen() {
                 .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(48.dp))
-            MedxLogoMark(size = 88.dp)
-            Spacer(Modifier.height(18.dp))
-            Text("MedX Elite", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-            Text(
-                "Sign in to your MedX account",
-                color = Mx.colors.secondaryText,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(40.dp))
+            Column(Modifier.widthIn(max = 440.dp).fillMaxWidth().align(Alignment.CenterHorizontally)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    MedxLogoMark(size = 56.dp)
+                    Spacer(Modifier.width(12.dp))
+                    RecDot()
+                    Spacer(Modifier.width(8.dp))
+                    NLabel("FMGE prep · v${quest.srihari.medxelite.BuildConfig.VERSION_NAME}")
+                }
+                Spacer(Modifier.height(36.dp))
+                DotText("MEDX", size = 76.sp)
+                DotText("ELITE", size = 76.sp, color = c.accent)
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "Sign in to your MedX account",
+                    color = c.secondaryText,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Spacer(Modifier.height(32.dp))
 
-            Column(Modifier.widthIn(max = 440.dp).fillMaxWidth()) {
                 OutlinedButton(
                     onClick = ::signInGoogle,
                     enabled = busy == null,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = CircleShape,
+                    border = BorderStroke(1.dp, c.separator),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = c.card, contentColor = c.ink),
                 ) {
                     if (busy == "google") {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = c.ink)
                     } else {
                         GoogleG()
                         Spacer(Modifier.width(10.dp))
@@ -194,10 +224,10 @@ fun SignInScreen() {
                     }
                 }
 
-                Row(Modifier.padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    HorizontalDivider(Modifier.weight(1f), color = Mx.colors.separator)
-                    Text("  or use email  ", color = Mx.colors.secondaryText, style = MaterialTheme.typography.labelMedium)
-                    HorizontalDivider(Modifier.weight(1f), color = Mx.colors.separator)
+                Row(Modifier.padding(vertical = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+                    DotDivider(Modifier.weight(1f))
+                    NLabel("or use email", Modifier.padding(horizontal = 12.dp))
+                    DotDivider(Modifier.weight(1f))
                 }
 
                 OutlinedTextField(
@@ -207,7 +237,8 @@ fun SignInScreen() {
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = fieldShape,
+                    colors = fieldColors,
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
@@ -220,23 +251,28 @@ fun SignInScreen() {
                     keyboardActions = KeyboardActions(onGo = { signInEmail() }),
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
-                            Icon(if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, "Show password")
+                            Icon(if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, "Show password")
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = fieldShape,
+                    colors = fieldColors,
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = ::forgot, enabled = busy == null) {
-                        Text(if (busy == "reset") "Sending…" else "Forgot password?")
+                        Text(if (busy == "reset") "Sending…" else "Forgot password?", color = c.secondaryText)
                     }
                 }
 
                 if (error != null) {
-                    Text(error!!, color = Mx.colors.wrong, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+                    Row(Modifier.padding(bottom = 10.dp), verticalAlignment = Alignment.Top) {
+                        RecDot(Modifier.padding(top = 6.dp), color = c.wrong)
+                        Spacer(Modifier.width(8.dp))
+                        Text(error!!, color = c.wrong, style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
                 if (info != null) {
-                    Text(info!!, color = Mx.colors.correct, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(info!!, color = c.ink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 10.dp))
                 }
                 if (canResend) {
                     TextButton(onClick = {
@@ -258,26 +294,28 @@ fun SignInScreen() {
                 Button(
                     onClick = ::signInEmail,
                     enabled = busy == null,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = CircleShape,
                 ) {
                     if (busy == "email") {
-                        CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        CircularProgressIndicator(Modifier.size(20.dp), color = c.onInk, strokeWidth = 2.dp)
                     } else {
                         Text("Sign in", fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, modifier = Modifier.size(18.dp))
                     }
                 }
 
                 Spacer(Modifier.height(28.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Text("New to MedX?", color = Mx.colors.secondaryText)
+                    Text("New to MedX?", color = c.secondaryText)
                     TextButton(onClick = { openCustomTab(context, Config.WEB_CREATE_ACCOUNT_URL) }) {
-                        Text("Create account", fontWeight = FontWeight.SemiBold)
+                        Text("Create account", fontWeight = FontWeight.SemiBold, color = c.ink)
                     }
                 }
                 Text(
                     "Accounts are created on the MedX website with an activation code, then work here too.",
-                    color = Mx.colors.tertiaryText,
+                    color = c.tertiaryText,
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),

@@ -1,5 +1,18 @@
 package quest.srihari.medxelite.ui.qbank
 
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.ui.unit.sp
+import quest.srihari.medxelite.ui.components.DotProgress
+import quest.srihari.medxelite.ui.components.DotStat
+import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.NChip
+import quest.srihari.medxelite.ui.components.NLabel
+import quest.srihari.medxelite.ui.components.NSegmented
+import quest.srihari.medxelite.ui.components.NWidget
+import quest.srihari.medxelite.ui.components.WidgetHeader
+import quest.srihari.medxelite.ui.components.WidgetShape
+import quest.srihari.medxelite.ui.theme.NType
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,12 +33,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -98,8 +111,8 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             MedxTopBar("QBank", large = true, scrollBehavior = scroll, actions = {
-                IconButton(onClick = { nav.go("search") }) { Icon(Icons.Filled.Search, "Search questions") }
-                IconButton(onClick = { nav.go("custom") }) { Icon(Icons.Filled.Tune, "Custom modules") }
+                IconButton(onClick = { nav.go("search") }) { Icon(Icons.Outlined.Search, "Search questions") }
+                IconButton(onClick = { nav.go("custom") }) { Icon(Icons.Outlined.Tune, "Custom modules") }
             })
         },
     ) { pad ->
@@ -118,25 +131,24 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     val marrowAvailable = state.value.any { it.bank == MedxBank.MARROW }
                     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
-                            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                MedxBank.entries.forEachIndexed { i, b ->
-                                    SegmentedButton(
-                                        selected = bank == b,
-                                        onClick = { Medx.prefs.setBank(b.raw) },
-                                        shape = SegmentedButtonDefaults.itemShape(i, MedxBank.entries.size),
-                                        enabled = b == MedxBank.ARISE || marrowAvailable,
-                                    ) { Text(b.label) }
-                                }
-                            }
+                            NSegmented(
+                                MedxBank.entries, bank, { it.label }, { Medx.prefs.setBank(it.raw) },
+                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                enabled = { it == MedxBank.ARISE || marrowAvailable },
+                            )
                         }
                         item {
                             val q = subjects.sumOf { it.questionCount }
                             val m = subjects.sumOf { it.moduleCount }
-                            Text(
-                                "${bank.eyebrow.uppercase()} · ${subjects.size} subjects · $m modules · ${"%,d".format(q)} questions",
-                                style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                            )
+                            NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                                WidgetHeader(bank.eyebrow)
+                                Spacer(Modifier.height(14.dp))
+                                Row(Modifier.fillMaxWidth()) {
+                                    DotStat("${subjects.size}", "subjects", Modifier.weight(0.8f), size = 30.sp)
+                                    DotStat("$m", "modules", Modifier.weight(1f), size = 30.sp)
+                                    DotStat(compactCount(q), "questions", Modifier.weight(1.1f), size = 30.sp)
+                                }
+                            }
                         }
                         if (subjects.isEmpty()) {
                             item { EmptyState("No subjects yet", "This bank hasn't been published yet.") }
@@ -163,14 +175,25 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
     }
 }
 
+/** 12,345 -> "12.3K" so big counts fit a dot-matrix stat. */
+fun compactCount(n: Int): String = when {
+    n >= 100_000 -> "${n / 1000}K"
+    n >= 10_000 -> "%.1fK".format(n / 1000.0)
+    else -> "%,d".format(n)
+}
+
+/** Two-letter subject monogram on a raised disc. */
 @Composable
-fun SubjectBadge(name: String, size: Int = 34) {
-    val hue = Hues.forName(name)
+fun SubjectBadge(name: String, size: Int = 38) {
+    val c = Mx.colors
     Box(
-        Modifier.size(size.dp).clip(RoundedCornerShape((size * 0.26f).dp)).background(hue),
+        Modifier.size(size.dp).clip(CircleShape).background(c.raised).border(1.dp, c.hairline, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Text(name.take(2).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+        Text(
+            name.filter { it.isLetter() }.take(2).uppercase(), color = c.ink,
+            style = androidx.compose.ui.text.TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = (size * 0.32f).sp, letterSpacing = 0.5.sp),
+        )
     }
 }
 
@@ -195,9 +218,19 @@ fun SubjectScreen(nav: Navigator, subjectId: String) {
         val practised = subject.modules.count { bySource.containsKey(it.id) }
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
-                Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-                    Text("$practised of ${subject.moduleCount} modules practised", style = MaterialTheme.typography.titleMedium)
-                    Text("${subject.chapters.size} chapters · ${"%,d".format(subject.questionCount)} questions", color = Mx.colors.secondaryText)
+                NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                    WidgetHeader("Progress", trailing = { NLabel("${subject.chapters.size} chapters") })
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        DotText("$practised", size = 56.sp)
+                        DotText("/${subject.moduleCount}", size = 26.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
+                        Spacer(Modifier.width(12.dp))
+                        NLabel("modules practised", Modifier.padding(bottom = 10.dp).weight(1f), maxLines = 2)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    DotProgress(practised.toFloat() / maxOf(subject.moduleCount, 1), dots = 32, dotSize = 5.dp)
+                    Spacer(Modifier.height(12.dp))
+                    Text("${"%,d".format(subject.questionCount)} questions across ${subject.chapters.size} chapters", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
                 }
             }
             items(subject.chapters, key = { it.id }) { chapter ->
@@ -210,10 +243,7 @@ fun SubjectScreen(nav: Navigator, subjectId: String) {
                             subtitle = "${m.questionCount} questions" + if (sittings.isNotEmpty()) " · ${sittings.size} sitting${if (sittings.size == 1) "" else "s"}" else "",
                             divider = i < chapter.modules.size - 1,
                             trailingContent = {
-                                if (best != null) {
-                                    Icon(Icons.Filled.CheckCircle, null, tint = Mx.colors.correct, modifier = Modifier.size(16.dp))
-                                    Text(" $best%", style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText)
-                                }
+                                if (best != null) NChip("$best%", inverted = true)
                             },
                         ) { pick = m }
                     }
@@ -251,17 +281,23 @@ fun StartSessionSheet(
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state, containerColor = Mx.colors.groupedBackground) {
         Column(Modifier.padding(horizontal = 20.dp).navigationBarsPadding().padding(bottom = 16.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text("$subtitle · $questionCount questions", color = Mx.colors.secondaryText)
-            Spacer(Modifier.height(16.dp))
-            ModeCard(SittingMode.EXAM, examBlurb ?: SittingMode.EXAM.description, Icons.Filled.Timer, Mx.colors.accent) { onStart(SittingMode.EXAM) }
+            NLabel(subtitle)
+            Spacer(Modifier.height(4.dp))
+            Text(title, style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(10.dp))
-            ModeCard(SittingMode.REVISION, SittingMode.REVISION.description, Icons.Filled.MenuBook, Hues.green) { onStart(SittingMode.REVISION) }
+            Row(verticalAlignment = Alignment.Bottom) {
+                DotText("$questionCount", size = 40.sp)
+                NLabel("questions", Modifier.padding(start = 8.dp, bottom = 7.dp))
+            }
+            Spacer(Modifier.height(18.dp))
+            ModeCard(SittingMode.EXAM, examBlurb ?: SittingMode.EXAM.description, Icons.Outlined.Timer, filled = true) { onStart(SittingMode.EXAM) }
+            Spacer(Modifier.height(10.dp))
+            ModeCard(SittingMode.REVISION, SittingMode.REVISION.description, Icons.Outlined.MenuBook, filled = false) { onStart(SittingMode.REVISION) }
             if (history.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
-                Text("YOUR SITTINGS", style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText)
-                Spacer(Modifier.height(6.dp))
-                Column(Modifier.clip(RoundedCornerShape(14.dp)).background(Mx.colors.card)) {
+                NLabel("Your sittings", Modifier.padding(start = 6.dp))
+                Spacer(Modifier.height(8.dp))
+                Column(Modifier.clip(RoundedCornerShape(24.dp)).background(Mx.colors.card).border(1.dp, Mx.colors.hairline, RoundedCornerShape(24.dp)).padding(vertical = 4.dp)) {
                     history.sortedByDescending { it.finishedAt }.take(5).forEachIndexed { i, a ->
                         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -270,7 +306,7 @@ fun StartSessionSheet(
                             }
                             Pill("${a.score}/${a.total}")
                         }
-                        if (i < minOf(history.size, 5) - 1) HorizontalDivider(color = Mx.colors.separator, thickness = 0.5.dp)
+                        if (i < minOf(history.size, 5) - 1) HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = Mx.colors.hairline, thickness = 1.dp)
                     }
                 }
             }
@@ -279,19 +315,26 @@ fun StartSessionSheet(
 }
 
 @Composable
-private fun ModeCard(mode: SittingMode, blurb: String, icon: ImageVector, hue: Color, onClick: () -> Unit) {
+private fun ModeCard(mode: SittingMode, blurb: String, icon: ImageVector, filled: Boolean, onClick: () -> Unit) {
+    val c = Mx.colors
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Mx.colors.card).clickable(onClick = onClick).padding(16.dp),
+        Modifier.fillMaxWidth().clip(WidgetShape).background(c.card).border(1.dp, if (filled) c.ink.copy(alpha = 0.5f) else c.hairline, WidgetShape)
+            .clickable(onClick = onClick).padding(18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(42.dp).clip(CircleShape).background(hue.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = hue)
+        Box(
+            Modifier.size(46.dp).clip(CircleShape).background(if (filled) c.ink else c.raised).border(1.dp, if (filled) c.ink else c.hairline, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = if (filled) c.onInk else c.ink, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(mode.displayName, fontWeight = FontWeight.SemiBold)
-            Text(blurb, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
+            Text(mode.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(2.dp))
+            Text(blurb, style = MaterialTheme.typography.bodySmall, color = c.secondaryText)
         }
-        Icon(Icons.Filled.Bolt, null, tint = hue)
+        Spacer(Modifier.width(8.dp))
+        Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, tint = if (filled) c.accent else c.tertiaryText, modifier = Modifier.size(20.dp))
     }
 }

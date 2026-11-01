@@ -1,5 +1,23 @@
 package quest.srihari.medxelite.ui.runner
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import quest.srihari.medxelite.ui.components.DotDivider
+import quest.srihari.medxelite.ui.components.DotStat
+import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.NChip
+import quest.srihari.medxelite.ui.components.NLabel
+import quest.srihari.medxelite.ui.components.NPill
+import quest.srihari.medxelite.ui.components.NWidget
+import quest.srihari.medxelite.ui.components.WidgetHeader
+import quest.srihari.medxelite.ui.components.WidgetShape
+import quest.srihari.medxelite.ui.components.rememberReveal
+import quest.srihari.medxelite.ui.theme.NType
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -22,10 +40,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -104,26 +122,40 @@ fun SittingReview(
     Scaffold(
         containerColor = Mx.colors.groupedBackground,
         topBar = {
-            MedxTopBar("Results", actions = { TextButton(onClick = onDone) { Text("Done", fontWeight = FontWeight.SemiBold) } })
+            MedxTopBar("Results", actions = {
+                TextButton(onClick = onDone, modifier = Modifier.padding(end = 4.dp)) { Text("Done", fontWeight = FontWeight.SemiBold) }
+            })
         },
     ) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
-                Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(name, style = MaterialTheme.typography.titleMedium, color = Mx.colors.secondaryText, maxLines = 2)
-                    Spacer(Modifier.height(8.dp))
-                    if (gradable) {
-                        Text("$score / $total", fontSize = 48.sp, fontWeight = FontWeight.Black)
-                        Text("$verdict · $pct%", style = MaterialTheme.typography.titleMedium, color = Mx.colors.accent)
-                    } else {
-                        Text("$attempted / $total", fontSize = 48.sp, fontWeight = FontWeight.Black)
-                        Text("answered · this paper has no answer key yet", color = Mx.colors.secondaryText)
+                NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                    WidgetHeader(if (gradable) "Score" else "Answered", trailing = { NChip(subject.ifBlank { "Sitting" }) })
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        if (gradable) {
+                            DotText("$pct", size = 112.sp)
+                            DotText("%", size = 48.sp, color = Mx.colors.accent, modifier = Modifier.padding(start = 4.dp, bottom = 14.dp))
+                        } else {
+                            DotText("$attempted", size = 112.sp)
+                            DotText("/$total", size = 40.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(start = 4.dp, bottom = 14.dp))
+                        }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                        Stat("$attempted", "attempted")
-                        if (gradable) Stat(if (attempted > 0) "${Math.round(score * 100.0 / attempted)}%" else "–", "accuracy")
-                        Stat(formatDuration(elapsedSeconds), "time")
+                    Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        if (gradable) "$verdict · $score of $total correct" else "This paper has no answer key yet",
+                        style = MaterialTheme.typography.bodyMedium, color = Mx.colors.secondaryText,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    ResultDots(questions, responses, gradable)
+                    Spacer(Modifier.height(16.dp))
+                    DotDivider()
+                    Spacer(Modifier.height(14.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        DotStat("$attempted", "attempted", Modifier.weight(1f), size = 26.sp)
+                        if (gradable) DotStat(if (attempted > 0) "${Math.round(score * 100.0 / attempted)}%" else "--", "accuracy", Modifier.weight(1f), size = 26.sp)
+                        DotStat(formatDuration(elapsedSeconds), "time", Modifier.weight(1f), size = 26.sp)
                     }
                 }
             }
@@ -131,22 +163,25 @@ fun SittingReview(
                 item {
                     GroupedSection("Blocks", "Each one was timed on its own and submitted for good.") {
                         sections.sortedBy { it.index }.forEach { b ->
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     Text(b.label, fontWeight = FontWeight.SemiBold)
                                     Text("${b.attempted} attempted · ${formatDuration(b.seconds)}", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
                                 }
-                                Text("${b.score}/${b.total}", fontWeight = FontWeight.Bold)
+                                DotText("${b.score}/${b.total}", size = 20.sp)
                             }
                         }
                     }
                 }
             }
             item {
-                Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(filter == ReviewFilter.ALL, { filter = ReviewFilter.ALL }, { Text("All ($total)") })
-                    if (gradable) FilterChip(filter == ReviewFilter.WRONG, { filter = ReviewFilter.WRONG }, { Text("Wrong ($wrongCount)") })
-                    FilterChip(filter == ReviewFilter.SKIPPED, { filter = ReviewFilter.SKIPPED }, { Text("Skipped ($skippedCount)") })
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterPill("All ($total)", filter == ReviewFilter.ALL) { filter = ReviewFilter.ALL }
+                    if (gradable) FilterPill("Wrong ($wrongCount)", filter == ReviewFilter.WRONG) { filter = ReviewFilter.WRONG }
+                    FilterPill("Skipped ($skippedCount)", filter == ReviewFilter.SKIPPED) { filter = ReviewFilter.SKIPPED }
                 }
             }
             itemsIndexed(shown, key = { _, v -> v.value.id }) { _, (index, q) ->
@@ -157,49 +192,101 @@ fun SittingReview(
                     Modifier
                         .padding(horizontal = 16.dp, vertical = 5.dp)
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(WidgetShape)
                         .background(Mx.colors.card)
+                        .border(1.dp, Mx.colors.hairline, WidgetShape)
                         .clickable { expanded = if (open) null else q.id }
-                        .padding(14.dp),
+                        .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 14.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        val (icon, tint) = when {
-                            r?.chosenId == null -> Icons.Filled.Remove to Mx.colors.tertiaryText
-                            !gradable -> Icons.Filled.Check to Mx.colors.accent
-                            r.correct -> Icons.Filled.Check to Mx.colors.correct
-                            else -> Icons.Filled.Close to Mx.colors.wrong
+                        val c = Mx.colors
+                        val (icon, bg, fg) = when {
+                            r?.chosenId == null -> Triple(Icons.Outlined.Remove, Color.Transparent, c.secondaryText)
+                            !gradable -> Triple(Icons.Outlined.Check, Color.Transparent, c.ink)
+                            r.correct -> Triple(Icons.Outlined.Check, c.ink, c.onInk)
+                            else -> Triple(Icons.Outlined.Close, c.wrong, Color.White)
                         }
-                        Box(Modifier.size(26.dp).clip(CircleShape).background(tint.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                            Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
+                        Box(
+                            Modifier.size(28.dp).clip(CircleShape).background(bg).border(1.dp, if (bg == Color.Transparent) c.separator else bg, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(icon, null, tint = fg, modifier = Modifier.size(16.dp))
                         }
-                        Spacer(Modifier.width(10.dp))
-                        Text("Q${index + 1}", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Q${index + 1}", style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = 15.sp))
                         val tag = tags?.getOrNull(index)
-                        if (!tag.isNullOrEmpty()) Text("  $tag", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
+                        if (!tag.isNullOrEmpty()) NLabel("  $tag", Modifier.weight(1f, fill = false), size = 10.sp)
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { Medx.activity.toggleBookmark(q, sourceId, name, subject) }, modifier = Modifier.size(32.dp)) {
-                            Icon(if (marked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder, "Bookmark", tint = if (marked) Mx.colors.flagged else Mx.colors.secondaryText)
+                        IconButton(onClick = { Medx.activity.toggleBookmark(q, sourceId, name, subject) }) {
+                            Icon(if (marked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder, "Bookmark", tint = if (marked) Mx.colors.accent else Mx.colors.secondaryText)
                         }
                     }
                     if (!open) {
-                        Text(RichHtml.plain(q.displayText), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = Mx.colors.secondaryText, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            RichHtml.plain(q.displayText), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            color = Mx.colors.secondaryText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(end = 8.dp),
+                        )
                     }
                     AnimatedVisibility(open) {
-                        Column {
-                            Spacer(Modifier.height(6.dp))
+                        Column(Modifier.padding(end = 8.dp)) {
+                            Spacer(Modifier.height(4.dp))
                             HtmlText(q.displayText, sizeSp = 16f, bold = true, extraImages = q.images.orEmpty())
-                            Spacer(Modifier.height(10.dp))
+                            Spacer(Modifier.height(14.dp))
                             q.options.forEachIndexed { i, o ->
                                 OptionButton(o, i, chosen = r?.chosenId == o.id, correct = q.isCorrect(o.id), revealed = gradable, locked = true) {}
                                 Spacer(Modifier.height(8.dp))
                             }
+                            Spacer(Modifier.height(4.dp))
                             Explanation(q)
                         }
                     }
                 }
             }
             item {
-                Button(onClick = onDone, modifier = Modifier.fillMaxWidth().padding(16.dp)) { Text("Done") }
+                NPill("Done", onDone, Modifier.fillMaxWidth().padding(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterPill(text: String, selected: Boolean, onClick: () -> Unit) {
+    val c = Mx.colors
+    Box(
+        Modifier
+            .heightIn(min = 40.dp)
+            .clip(CircleShape)
+            .background(if (selected) c.ink else Color.Transparent)
+            .border(1.dp, if (selected) c.ink else c.separator, CircleShape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, color = if (selected) c.onInk else c.ink, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+    }
+}
+
+/** Every question as a dot: ink = right, red = wrong, ring = skipped. */
+@Composable
+private fun ResultDots(questions: List<Question>, responses: Map<Int, QuestionResponse>, gradable: Boolean) {
+    val c = Mx.colors
+    val reveal = rememberReveal(questions.size)
+    val perRow = 20
+    val rows = (questions.size + perRow - 1) / perRow
+    Canvas(Modifier.fillMaxWidth().height((rows * 14).dp)) {
+        val step = size.width / perRow
+        val r = minOf(4.5.dp.toPx(), step * 0.36f)
+        val shown = (questions.size * reveal).toInt()
+        questions.forEachIndexed { i, q ->
+            val cx = step * (i % perRow) + step / 2
+            val cy = 14.dp.toPx() * (i / perRow) + 7.dp.toPx()
+            val resp = responses[q.id]
+            val o = androidx.compose.ui.geometry.Offset(cx, cy)
+            when {
+                i >= shown -> drawCircle(c.dotOff, r, o)
+                resp?.chosenId == null -> drawCircle(c.secondaryText, r - 0.75.dp.toPx(), o, style = Stroke(1.5.dp.toPx()))
+                gradable && !resp.correct -> drawCircle(c.wrong, r, o)
+                else -> drawCircle(c.ink, r, o)
             }
         }
     }

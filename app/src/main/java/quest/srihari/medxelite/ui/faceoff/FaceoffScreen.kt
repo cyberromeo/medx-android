@@ -1,5 +1,19 @@
 package quest.srihari.medxelite.ui.faceoff
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import quest.srihari.medxelite.ui.components.DotLoader
+import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.NLabel
+import quest.srihari.medxelite.ui.components.NPill
+import quest.srihari.medxelite.ui.components.NSegmented
+import quest.srihari.medxelite.ui.components.NWidget
+import quest.srihari.medxelite.ui.components.RecDot
+import quest.srihari.medxelite.ui.components.WidgetHeader
+import quest.srihari.medxelite.ui.components.WidgetShape
+import quest.srihari.medxelite.ui.theme.NType
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -20,9 +34,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -122,12 +136,18 @@ fun FaceoffScreen(nav: Navigator) {
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar("Faceoff", onBack = nav::back) }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
-                Card(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Bolt, null, tint = Hues.yellow)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Duel any MedX friend", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                    WidgetHeader("1 v 1 · live")
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        DotText("60", size = 64.sp)
+                        DotText("s", size = 28.sp, color = Mx.colors.accent, modifier = Modifier.padding(start = 2.dp, bottom = 8.dp))
+                        Spacer(Modifier.width(12.dp))
+                        NLabel("per question", Modifier.padding(bottom = 14.dp))
                     }
+                    Spacer(Modifier.height(6.dp))
+                    Text("Duel any MedX friend", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         "Same questions, same 60-second clock. A right answer scores 40 plus the seconds left. Create a room and share its code, or join one.",
                         color = Mx.colors.secondaryText, style = MaterialTheme.typography.bodyMedium,
@@ -139,23 +159,24 @@ fun FaceoffScreen(nav: Navigator) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             code, { code = it.uppercase().filter { ch -> ch.isLetterOrDigit() }.take(8) },
-                            placeholder = { Text("Room code") }, singleLine = true,
+                            placeholder = { Text("CODE", style = MaterialTheme.typography.titleMedium.copy(fontFamily = NType.mono, letterSpacing = 4.sp)) }, singleLine = true,
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                            textStyle = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Monospace, letterSpacing = 4.sp),
+                            textStyle = MaterialTheme.typography.titleMedium.copy(fontFamily = NType.mono, fontWeight = FontWeight.Bold, letterSpacing = 4.sp),
+                            shape = CircleShape,
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Mx.colors.ink, unfocusedBorderColor = Mx.colors.separator, cursorColor = Mx.colors.accent),
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(10.dp))
-                        Button(onClick = ::join, enabled = busy == null) {
-                            if (busy == "join") CircularProgressIndicator(Modifier.height(18.dp).width(18.dp), strokeWidth = 2.dp) else Text("Join")
-                        }
+                        NPill(if (busy == "join") "Joining…" else "Join", ::join, enabled = busy == null, modifier = Modifier.height(56.dp))
                     }
                 }
             }
             item {
                 GroupedSection("Create a room — length") {
-                    Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DuelRules.LENGTHS.forEach { l -> FilterChip(length == l, { length = l }, { Text(if (l == 0) "Whole paper" else "$l questions") }) }
-                    }
+                    NSegmented(
+                        DuelRules.LENGTHS, length, { l -> if (l == 0) "All" else "$l q" }, { length = it },
+                        Modifier.padding(10.dp),
+                    )
                 }
             }
             when (val s = series) {
@@ -165,7 +186,7 @@ fun FaceoffScreen(nav: Navigator) {
                     GroupedSection("Pick a paper to deal from") {
                         val papers = s.value.sortedByDescending { it.startAt }.take(60)
                         papers.forEachIndexed { i, p ->
-                            MedxRow(p.title, "${p.group.label} · ${p.questions} questions", icon = Icons.Filled.EmojiEvents, iconTint = Hues.forName(p.title), divider = i < papers.size - 1) { pick = p }
+                            MedxRow(p.title, "${p.group.label} · ${p.questions} questions", icon = Icons.Outlined.EmojiEvents, iconTint = Mx.colors.ink, divider = i < papers.size - 1) { pick = p }
                         }
                     }
                 }
@@ -225,7 +246,7 @@ private fun DuelRoomScreen(gameId: String, onClose: () -> Unit) {
                         putExtra(Intent.EXTRA_TEXT, "Faceoff me on MedX Elite — room code $gameId")
                     }
                     context.startActivity(Intent.createChooser(send, "Share room code"))
-                }) { Icon(Icons.Filled.Share, null); Spacer(Modifier.width(4.dp)); Text("Share") }
+                }) { Icon(Icons.Outlined.Share, null); Spacer(Modifier.width(4.dp)); Text("Share") }
             })
         },
     ) { pad ->
@@ -238,8 +259,8 @@ private fun DuelRoomScreen(gameId: String, onClose: () -> Unit) {
                 DuelPhase.LOADING -> LoadingState("Opening the room")
                 DuelPhase.LOBBY -> Lobby(room)
                 DuelPhase.ARMING -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Text("Question ${room.qIndex + 1}", style = MaterialTheme.typography.titleMedium, color = Mx.colors.secondaryText)
-                    Text("${room.armingIn}", fontSize = 96.sp, fontWeight = FontWeight.Black, color = Mx.colors.accent)
+                    NLabel("Question ${room.qIndex + 1}")
+                    DotText("${room.armingIn}", size = 140.sp, color = Mx.colors.accent)
                     Scoreboard(room)
                 }
                 DuelPhase.ASKED, DuelPhase.WAITING, DuelPhase.REVEAL -> Round(room)
@@ -266,27 +287,28 @@ private fun DuelRoomScreen(gameId: String, onClose: () -> Unit) {
 @Composable
 private fun Lobby(room: DuelRoom) {
     Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Text("ROOM CODE", style = MaterialTheme.typography.labelLarge, color = Mx.colors.secondaryText)
-        Text(room.gameId, fontSize = 48.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Monospace, letterSpacing = 6.sp, color = Mx.colors.accent)
+        Row(verticalAlignment = Alignment.CenterVertically) { RecDot(); Spacer(Modifier.width(8.dp)); NLabel("Room code") }
+        Spacer(Modifier.height(8.dp))
+        DotText(room.gameId, size = 56.sp)
         Text(room.sourceLabel(), color = Mx.colors.secondaryText, textAlign = TextAlign.Center)
         Spacer(Modifier.height(28.dp))
         val other = room.theirs
         if (room.isHost) {
             if (other == null || other.left) {
-                CircularProgressIndicator()
-                Spacer(Modifier.height(12.dp))
+                DotLoader()
+                Spacer(Modifier.height(14.dp))
                 Text("Waiting for a friend to join with this code…", textAlign = TextAlign.Center)
             } else {
                 Text("${other.profile.ifBlank { "Your friend" }} joined", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { room.startGame() }, modifier = Modifier.fillMaxWidth()) { Text("Start the duel") }
+                NPill("Start the duel", { room.startGame() }, Modifier.fillMaxWidth(), accent = true)
             }
         } else {
             if (room.mine == null) {
-                Button(onClick = { room.join() }) { Text("Join ${room.hostName()}'s room") }
+                NPill("Join ${room.hostName()}'s room", { room.join() })
             } else {
-                CircularProgressIndicator()
-                Spacer(Modifier.height(12.dp))
+                DotLoader()
+                Spacer(Modifier.height(14.dp))
                 Text("You're in. Waiting for ${room.hostName()} to start…", textAlign = TextAlign.Center)
             }
         }
@@ -298,13 +320,13 @@ private fun Scoreboard(room: DuelRoom) {
     val s = room.scores
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Column {
-            Text("You", style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText)
-            Text("${s[room.uid]?.points ?: 0}", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Mx.colors.accent)
+            Row(verticalAlignment = Alignment.CenterVertically) { RecDot(); Spacer(Modifier.width(6.dp)); NLabel("You") }
+            DotText("${s[room.uid]?.points ?: 0}", size = 30.sp)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(room.theirName, style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText)
+            NLabel(room.theirName)
             val theirUid = room.uids.firstOrNull { it != room.uid }
-            Text("${theirUid?.let { s[it]?.points } ?: 0}", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Hues.pink)
+            DotText("${theirUid?.let { s[it]?.points } ?: 0}", size = 30.sp, color = Mx.colors.secondaryText)
         }
     }
 }
@@ -320,14 +342,17 @@ private fun Round(room: DuelRoom) {
         Scoreboard(room)
         LinearProgressIndicator(
             progress = { room.remaining / DuelRules.PER_QUESTION.toFloat() },
-            color = if (room.remaining <= 10) Mx.colors.wrong else Mx.colors.accent,
-            modifier = Modifier.fillMaxWidth().height(4.dp),
+            color = if (room.remaining <= 10) Mx.colors.wrong else Mx.colors.ink,
+            trackColor = Mx.colors.hairline, drawStopIndicator = {}, gapSize = 0.dp,
+            modifier = Modifier.fillMaxWidth().height(2.dp),
         )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Text(
-                "Question ${room.qIndex + 1} of ${maxOf(room.game?.total ?: 0, room.deck.size)} · ${room.remaining}s",
-                style = MaterialTheme.typography.labelLarge, color = Mx.colors.secondaryText,
-            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                DotText("%02d".format(room.qIndex + 1), size = 28.sp)
+                DotText(" / ${maxOf(room.game?.total ?: 0, room.deck.size)}", size = 16.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(bottom = 3.dp))
+                Spacer(Modifier.weight(1f))
+                DotText("${room.remaining}s", size = 24.sp, color = if (room.remaining <= 10) Mx.colors.wrong else Mx.colors.ink)
+            }
             Spacer(Modifier.height(6.dp))
             HtmlText(q.displayText, sizeSp = 18f, bold = true)
             Spacer(Modifier.height(14.dp))
@@ -337,7 +362,7 @@ private fun Round(room: DuelRoom) {
                     locked = room.phase != DuelPhase.ASKED,
                 ) { room.answer(o.id) }
                 if (reveal && theirs?.optionId == o.id) {
-                    Text("↑ ${room.theirName}'s pick", style = MaterialTheme.typography.labelSmall, color = Hues.pink, modifier = Modifier.padding(start = 12.dp, top = 2.dp))
+                    Text("↑ ${room.theirName}'s pick", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText, modifier = Modifier.padding(start = 12.dp, top = 4.dp))
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -351,14 +376,14 @@ private fun Round(room: DuelRoom) {
                 Explanation(q)
             }
         }
-        Box(Modifier.fillMaxWidth().background(Mx.colors.card).padding(16.dp)) {
+        Box(Modifier.fillMaxWidth().background(Mx.colors.groupedBackground).navigationBarsPadding().padding(16.dp)) {
             when (room.phase) {
                 DuelPhase.ASKED -> Text("Pick an answer — faster scores more.", color = Mx.colors.secondaryText)
                 DuelPhase.WAITING -> Text("Locked in. Waiting for ${room.theirName}…", color = Mx.colors.secondaryText)
                 else -> if (room.iVoted) {
                     Text(if (room.theyVoted) "Next question coming…" else "Waiting for ${room.theirName} to tap Next…", color = Mx.colors.secondaryText)
                 } else {
-                    Button(onClick = { room.voteNext() }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
+                    NPill("Next", { room.voteNext() }, Modifier.fillMaxWidth())
                 }
             }
         }
@@ -377,23 +402,24 @@ private fun Result(room: DuelRoom, onClose: () -> Unit) {
         else -> "It's a draw"
     }
     Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Icon(Icons.Filled.EmojiEvents, null, tint = Hues.orange, modifier = Modifier.height(64.dp).width(64.dp))
-        Text(verdict, fontSize = 32.sp, fontWeight = FontWeight.Black)
+        Icon(Icons.Outlined.EmojiEvents, null, tint = if (me.points > them.points) Mx.colors.accent else Mx.colors.ink, modifier = Modifier.height(48.dp).width(48.dp))
+        Spacer(Modifier.height(10.dp))
+        Text(verdict, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(20.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             listOf("You" to me, room.theirName to them).forEach { (name, sc) ->
                 Column(
-                    Modifier.clip(RoundedCornerShape(18.dp)).background(Mx.colors.card).padding(16.dp),
+                    Modifier.clip(WidgetShape).background(Mx.colors.card).border(1.dp, Mx.colors.hairline, WidgetShape).padding(18.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(name, color = Mx.colors.secondaryText)
-                    Text("${sc.points}", fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                    NLabel(name)
+                    DotText("${sc.points}", size = 44.sp)
                     Text("${sc.correct} correct · ${sc.firsts} first", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
                     sc.fastest?.let { Text("fastest ${it}s", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText) }
                 }
             }
         }
         Spacer(Modifier.height(24.dp))
-        OutlinedButton(onClick = onClose) { Text("Done") }
+        NPill("Done", onClose, filled = false)
     }
 }

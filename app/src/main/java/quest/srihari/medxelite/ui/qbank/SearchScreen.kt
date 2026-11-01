@@ -1,5 +1,6 @@
 package quest.srihari.medxelite.ui.qbank
 
+import quest.srihari.medxelite.ui.components.NSearchField
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,7 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -67,16 +68,13 @@ fun SearchScreen(nav: Navigator) {
         }
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
-                OutlinedTextField(
-                    query, { query = it },
-                    placeholder = { Text("Subjects, chapters, modules…") },
-                    leadingIcon = { Icon(Icons.Filled.Search, null) },
-                    singleLine = true, shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).focusRequester(focus),
+                NSearchField(
+                    query, { query = it }, "Subjects, chapters, modules…",
+                    Modifier.padding(horizontal = 16.dp, vertical = 8.dp), focusRequester = focus,
                 )
             }
             if (q.length >= 2 && hits.isEmpty() && bookmarkHits.isEmpty()) {
-                item { EmptyState("No results", "Nothing matches “$q”.", icon = Icons.Filled.Search) }
+                item { EmptyState("No results", "Nothing matches “$q”.", icon = Icons.Outlined.Search) }
             }
             if (hits.isNotEmpty()) {
                 item {

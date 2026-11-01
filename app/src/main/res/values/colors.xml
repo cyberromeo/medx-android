@@ -1,4 +1,5 @@
 <resources>
-    <color name="medx_bg">#F2F2F7</color>
-    <color name="ic_bg_start">#3D8FFF</color>
+    <!-- Dark (true black) is the default appearance, so the launch window matches it. -->
+    <color name="medx_bg">#000000</color>
+    <color name="ic_bg_start">#000000</color>
 </resources>

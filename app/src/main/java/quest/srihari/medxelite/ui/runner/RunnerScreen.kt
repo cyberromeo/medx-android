@@ -1,5 +1,22 @@
 package quest.srihari.medxelite.ui.runner
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
+import quest.srihari.medxelite.ui.components.DotDivider
+import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.NCircleButton
+import quest.srihari.medxelite.ui.components.NLabel
+import quest.srihari.medxelite.ui.components.NPill
+import quest.srihari.medxelite.ui.components.NWidget
+import quest.srihari.medxelite.ui.components.RecDot
+import quest.srihari.medxelite.ui.components.WidgetHeader
+import quest.srihari.medxelite.ui.components.WidgetShape
+import quest.srihari.medxelite.ui.theme.NType
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
@@ -27,15 +44,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -151,59 +168,71 @@ fun RunnerScreen(nav: Navigator, payload: RunnerPayload?) {
     Scaffold(
         containerColor = Mx.colors.groupedBackground,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Mx.colors.groupedBackground),
-                navigationIcon = { IconButton(onClick = ::requestClose) { Icon(Icons.Filled.Close, "Close") } },
-                title = {
-                    Column {
-                        val ready = state.load == RunnerLoad.Ready && state.questions.isNotEmpty()
-                        Text(
-                            if (ready) "Question ${state.currentIndex + 1} of ${state.questions.size}" else payload.name,
-                            style = MaterialTheme.typography.titleMedium, maxLines = 1,
-                        )
+            val ready = state.load == RunnerLoad.Ready && state.questions.isNotEmpty()
+            Column(Modifier.fillMaxWidth().background(Mx.colors.groupedBackground).statusBarsPadding()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    NCircleButton(Icons.Outlined.Close, "Close", ::requestClose)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        if (ready) {
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                DotText("%02d".format(state.currentIndex + 1), size = 30.sp)
+                                DotText(" / ${state.questions.size}", size = 18.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(bottom = 3.dp))
+                            }
+                        } else {
+                            Text(payload.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                         val parts = mutableListOf(if (state.isExam) "Exam" else "Revision")
-                        if (state.isSectioned) parts.add("Block ${state.sectionIndex + 1} of ${state.sections.size}")
+                        if (state.isSectioned) parts.add("Block ${state.sectionIndex + 1}/${state.sections.size}")
                         if (ready) parts.add(payload.name)
-                        Text(parts.joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText, maxLines = 1)
+                        NLabel(parts.joinToString(" · "), size = 10.sp)
                     }
-                },
-                actions = {
                     if (state.load == RunnerLoad.Ready) {
                         Clock(state)
+                        Spacer(Modifier.width(8.dp))
                         val q = state.currentQuestion
                         if (q != null) {
                             val marked = isMarked(q)
-                            IconButton(onClick = {
-                                Medx.activity.toggleBookmark(q, payload.id, payload.name, payload.subject)
-                                buzz()
-                            }) {
-                                Icon(if (marked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder, "Bookmark", tint = if (marked) Mx.colors.flagged else MaterialTheme.colorScheme.onSurface)
-                            }
+                            NCircleButton(
+                                if (marked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder, "Bookmark",
+                                {
+                                    Medx.activity.toggleBookmark(q, payload.id, payload.name, payload.subject)
+                                    buzz()
+                                },
+                                tint = if (marked) Mx.colors.accent else null,
+                            )
                         }
                     }
-                },
-            )
+                }
+                if (ready) {
+                    QuestionDots(state, Modifier.padding(horizontal = 18.dp, vertical = 6.dp))
+                    TimeBar(state)
+                }
+            }
         },
         bottomBar = {
             if (state.load == RunnerLoad.Ready) {
-                Row(
-                    Modifier.fillMaxWidth().background(Mx.colors.card).navigationBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextButton(onClick = { state.goBack(); buzz() }, enabled = state.canGoBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null); Spacer(Modifier.width(4.dp)); Text("Previous")
-                    }
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = { showNavigator = true }) { Icon(Icons.Filled.GridView, "Questions") }
-                    Spacer(Modifier.weight(1f))
-                    Button(
-                        onClick = { buzz(); if (state.isLastQuestion) showSubmit = true else state.next() },
-                        enabled = state.canAdvanceNow,
-                        colors = if (state.isLastQuestion) ButtonDefaults.buttonColors(containerColor = Mx.colors.correct) else ButtonDefaults.buttonColors(),
+                Column(Modifier.fillMaxWidth().background(Mx.colors.groupedBackground)) {
+                    HorizontalDivider(color = Mx.colors.hairline, thickness = 1.dp)
+                    Row(
+                        Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(if (state.isLastQuestion) "Submit" else "Next")
-                        Spacer(Modifier.width(4.dp))
-                        Icon(if (state.isLastQuestion) Icons.Filled.Check else Icons.AutoMirrored.Filled.ArrowForward, null)
+                        NCircleButton(Icons.AutoMirrored.Outlined.ArrowBack, "Previous", { state.goBack(); buzz() }, enabled = state.canGoBack, size = 52.dp)
+                        Spacer(Modifier.width(10.dp))
+                        NCircleButton(Icons.Outlined.GridView, "Questions", { showNavigator = true }, size = 52.dp)
+                        Spacer(Modifier.weight(1f))
+                        NPill(
+                            if (state.isLastQuestion) "Submit" else "Next",
+                            onClick = { buzz(); if (state.isLastQuestion) showSubmit = true else state.next() },
+                            enabled = state.canAdvanceNow,
+                            accent = state.isLastQuestion,
+                            trailingIcon = if (state.isLastQuestion) Icons.Outlined.Check else Icons.AutoMirrored.Outlined.ArrowForward,
+                            modifier = Modifier.widthIn(min = 140.dp).height(52.dp),
+                        )
                     }
                 }
             }
@@ -301,29 +330,68 @@ fun RunnerScreen(nav: Navigator, payload: RunnerPayload?) {
 @Composable
 private fun Clock(state: RunnerState) {
     val color = when (state.phase) {
-        ClockPhase.CALM -> MaterialTheme.colorScheme.onSurface
-        ClockPhase.LOW -> Mx.colors.flagged
+        ClockPhase.CALM -> Mx.colors.ink
+        ClockPhase.LOW -> Mx.colors.accent
         ClockPhase.CRITICAL -> Mx.colors.wrong
     }
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
-        Icon(Icons.Filled.Timer, null, tint = color, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(2.dp))
-        Text(formatDuration(state.displaySeconds), color = color, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+    Row(
+        Modifier.clip(CircleShape).border(1.dp, if (state.phase == ClockPhase.CALM) Mx.colors.hairline else color, CircleShape).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (state.phase != ClockPhase.CALM) { RecDot(size = 6.dp, color = color); Spacer(Modifier.width(6.dp)) }
+        Text(
+            formatDuration(state.displaySeconds), color = color,
+            style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 0.5.sp),
+        )
     }
 }
 
 @Composable
 private fun TimeBar(state: RunnerState) {
     val fraction = state.displaySeconds.toFloat() / maxOf(state.capacitySeconds, 1)
-    val color by animateColorAsState(
-        when (state.phase) {
-            ClockPhase.CALM -> Mx.colors.accent
-            ClockPhase.LOW -> Mx.colors.flagged
-            ClockPhase.CRITICAL -> Mx.colors.wrong
-        },
-        label = "clock",
+    val color = when (state.phase) {
+        ClockPhase.CALM -> Mx.colors.ink.copy(alpha = 0.55f)
+        ClockPhase.LOW -> Mx.colors.accent
+        ClockPhase.CRITICAL -> Mx.colors.wrong
+    }
+    LinearProgressIndicator(
+        progress = { fraction.coerceIn(0f, 1f) }, color = color, trackColor = Mx.colors.hairline,
+        drawStopIndicator = {}, gapSize = 0.dp,
+        modifier = Modifier.fillMaxWidth().height(2.dp),
     )
-    LinearProgressIndicator(progress = { fraction.coerceIn(0f, 1f) }, color = color, trackColor = Mx.colors.separator, modifier = Modifier.fillMaxWidth().height(3.dp))
+}
+
+/** One dot per question in the current block: lit = answered, red = wrong, ring = current. */
+@Composable
+private fun QuestionDots(state: RunnerState, modifier: Modifier = Modifier) {
+    val c = Mx.colors
+    val s = state.activeSection
+    val end = minOf(s.end, state.questions.size)
+    val count = end - s.start
+    if (count <= 0) return
+    Canvas(modifier.fillMaxWidth().height(10.dp)) {
+        val maxR = 4.dp.toPx()
+        val step = if (count > 1) size.width / count else size.width
+        val r = minOf(maxR, step * 0.32f)
+        for (k in 0 until count) {
+            val i = s.start + k
+            val q = state.questions[i]
+            val resp = state.responses[q.id]
+            val cx = step * k + step / 2
+            val cy = size.height / 2
+            val color = when {
+                resp == null || resp.chosenId == null -> c.dotOff
+                !state.isExam && !resp.correct -> c.wrong
+                else -> c.ink
+            }
+            if (i == state.currentIndex) {
+                drawCircle(c.ink, r + 1.5.dp.toPx(), androidx.compose.ui.geometry.Offset(cx, cy), style = Stroke(1.5.dp.toPx()))
+                if (resp != null && resp.chosenId != null) drawCircle(color, r * 0.7f, androidx.compose.ui.geometry.Offset(cx, cy))
+            } else {
+                drawCircle(color, r, androidx.compose.ui.geometry.Offset(cx, cy))
+            }
+        }
+    }
 }
 
 @Composable
@@ -347,15 +415,18 @@ private fun QuestionPane(state: RunnerState, q: Question, payload: RunnerPayload
                 ) { _, amount -> dragTotal += amount }
             }
             .verticalScroll(scroll)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(horizontal = 18.dp, vertical = 14.dp),
     ) {
         val tag = payload.questionTags?.getOrNull(state.currentIndex)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (!tag.isNullOrEmpty()) { Pill(tag); Spacer(Modifier.width(6.dp)) }
-            if (!q.hasAnswerKey) Pill("No answer key", Mx.colors.flagged)
+        if (!tag.isNullOrEmpty() || !q.hasAnswerKey) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (!tag.isNullOrEmpty()) { Pill(tag); Spacer(Modifier.width(6.dp)) }
+                if (!q.hasAnswerKey) Pill("No answer key", Mx.colors.flagged)
+            }
+            Spacer(Modifier.height(10.dp))
         }
         HtmlText(q.displayText, sizeSp = 18f, bold = true, extraImages = q.images.orEmpty())
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
         q.options.forEachIndexed { i, opt ->
             OptionButton(
                 option = opt, index = i,
@@ -367,7 +438,7 @@ private fun QuestionPane(state: RunnerState, q: Question, payload: RunnerPayload
         }
         if (revealed) {
             if (response?.timedOut == true) {
-                Text("Time's up — the answer is shown above.", color = Mx.colors.flagged, fontWeight = FontWeight.SemiBold)
+                NLabel("Time's up · answer shown above", color = Mx.colors.accent)
                 Spacer(Modifier.height(8.dp))
             }
             Explanation(q)
@@ -376,6 +447,10 @@ private fun QuestionPane(state: RunnerState, q: Question, payload: RunnerPayload
     }
 }
 
+/**
+ * Answer option. Selected (not yet revealed) and correct are an inverted ink fill; a wrong pick is
+ * outlined in red with a red letter chip; everything else is a flat widget row with a hairline.
+ */
 @Composable
 fun OptionButton(
     option: QuestionOption,
@@ -386,37 +461,54 @@ fun OptionButton(
     locked: Boolean,
     onClick: () -> Unit,
 ) {
-    val accent = Mx.colors.accent
-    val (border, fill) = when {
-        revealed && correct -> Mx.colors.correct to Mx.colors.correct.copy(alpha = 0.12f)
-        revealed && chosen -> Mx.colors.wrong to Mx.colors.wrong.copy(alpha = 0.12f)
-        chosen -> accent to accent.copy(alpha = 0.12f)
-        else -> Color.Transparent to Mx.colors.card
+    val c = Mx.colors
+    val shape = RoundedCornerShape(22.dp)
+    val inverted = (revealed && correct) || (!revealed && chosen)
+    val wrongPick = revealed && chosen && !correct
+    val fill = when {
+        inverted -> c.ink
+        else -> c.card
     }
+    val border = when {
+        inverted -> c.ink
+        wrongPick -> c.wrong
+        else -> c.hairline
+    }
+    val textColor = if (inverted) c.onInk else MaterialTheme.colorScheme.onSurface
+    val dim = revealed && !correct && !chosen
     val letter = option.label.ifBlank { ('A' + index).toString() }
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .heightIn(min = 60.dp)
+            .clip(shape)
             .background(fill)
-            .border(1.5.dp, border, RoundedCornerShape(14.dp))
+            .border(if (wrongPick) 1.5.dp else 1.dp, border, shape)
             .clickable(enabled = !locked, onClick = onClick)
-            .padding(14.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val badge = when {
-            revealed && correct -> Mx.colors.correct
-            revealed && chosen -> Mx.colors.wrong
-            chosen -> accent
-            else -> Mx.colors.separator
+        val (chipBg, chipFg, chipBorder) = when {
+            inverted -> Triple(c.onInk, c.ink, c.onInk)
+            wrongPick -> Triple(c.wrong, Color.White, c.wrong)
+            else -> Triple(Color.Transparent, c.ink, c.separator)
         }
-        Box(Modifier.size(30.dp).clip(CircleShape).background(badge), contentAlignment = Alignment.Center) {
-            Text(letter, color = if (chosen || (revealed && correct)) Color.White else MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+        Box(
+            Modifier.size(36.dp).clip(CircleShape).background(chipBg).border(1.dp, chipBorder, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(letter, color = chipFg, style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = 15.sp))
         }
-        Spacer(Modifier.width(12.dp))
-        HtmlText(option.text, Modifier.weight(1f), sizeSp = 16f)
-        if (revealed && correct) Icon(Icons.Filled.Check, null, tint = Mx.colors.correct)
-        if (revealed && chosen && !correct) Icon(Icons.Filled.Close, null, tint = Mx.colors.wrong)
+        Spacer(Modifier.width(14.dp))
+        HtmlText(option.text, Modifier.weight(1f), sizeSp = 16f, color = if (dim) c.secondaryText else textColor)
+        if (revealed && correct) {
+            Spacer(Modifier.width(8.dp))
+            Icon(Icons.Outlined.Check, "Correct answer", tint = c.onInk, modifier = Modifier.size(22.dp))
+        }
+        if (wrongPick) {
+            Spacer(Modifier.width(8.dp))
+            Icon(Icons.Outlined.Close, "Your answer, wrong", tint = c.wrong, modifier = Modifier.size(22.dp))
+        }
     }
 }
 
@@ -424,18 +516,14 @@ fun OptionButton(
 fun Explanation(q: Question) {
     val text = q.explanation
     if (text.isNullOrBlank() && q.reference.isNullOrBlank()) return
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Mx.colors.card).padding(14.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Lightbulb, null, tint = Mx.colors.flagged, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Explanation", fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(Modifier.height(6.dp))
+    NWidget(Modifier.fillMaxWidth()) {
+        WidgetHeader("Explanation")
+        Spacer(Modifier.height(10.dp))
         if (!text.isNullOrBlank()) HtmlText(text, sizeSp = 15f)
         if (!q.reference.isNullOrBlank()) {
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(12.dp))
+            DotDivider()
+            Spacer(Modifier.height(10.dp))
             HtmlText("<i>${q.reference}</i>", sizeSp = 13f, color = Mx.colors.secondaryText)
         }
     }
@@ -443,9 +531,9 @@ fun Explanation(q: Question) {
 
 @Composable
 private fun HandoverOverlay(h: Handover, onBegin: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
         Column(
-            Modifier.padding(24.dp).widthIn(max = 420.dp).clip(RoundedCornerShape(24.dp)).background(Mx.colors.card).padding(24.dp),
+            Modifier.padding(24.dp).widthIn(max = 420.dp).clip(WidgetShape).background(Mx.colors.card).border(1.dp, Mx.colors.hairline, WidgetShape).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("${h.closedLabel} submitted", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -458,7 +546,7 @@ private fun HandoverOverlay(h: Handover, onBegin: () -> Unit) {
             Text("Next: ${h.nextLabel}", fontWeight = FontWeight.SemiBold)
             Text("${h.nextCount} questions · ${h.nextMinutes} minutes · ${h.remainingSections} block${if (h.remainingSections == 1) "" else "s"} left", color = Mx.colors.secondaryText, textAlign = TextAlign.Center)
             Spacer(Modifier.height(20.dp))
-            Button(onClick = onBegin, modifier = Modifier.fillMaxWidth()) { Text("Start ${h.nextLabel}") }
+            NPill("Start ${h.nextLabel}", onBegin, Modifier.fillMaxWidth())
         }
     }
 }
@@ -466,10 +554,14 @@ private fun HandoverOverlay(h: Handover, onBegin: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun NavigatorSheet(state: RunnerState, isMarked: (Question) -> Boolean, onDismiss: () -> Unit, onJump: (Int) -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Mx.colors.card) {
         Column(Modifier.padding(horizontal = 16.dp).navigationBarsPadding().padding(bottom = 16.dp)) {
-            Text(if (state.isSectioned) state.activeSection.label else "Questions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text("${state.sectionAnswered} of ${state.questionsInSection.size} answered", color = Mx.colors.secondaryText)
+            WidgetHeader(if (state.isSectioned) state.activeSection.label else "Questions")
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                DotText("${state.sectionAnswered}", size = 36.sp)
+                NLabel(" / ${state.questionsInSection.size} answered", Modifier.padding(bottom = 6.dp, start = 6.dp))
+            }
             Spacer(Modifier.height(12.dp))
             val s = state.activeSection
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
@@ -479,23 +571,29 @@ private fun NavigatorSheet(state: RunnerState, isMarked: (Question) -> Boolean, 
                     val locked = !state.isExam && i > state.furthestIndex
                     val fill = when {
                         r == null -> Mx.colors.card
-                        !state.isExam && r.correct -> Mx.colors.correct
+                        !state.isExam && r.correct -> Mx.colors.ink
                         !state.isExam -> Mx.colors.wrong
-                        r.chosenId != null -> Mx.colors.accent
+                        r.chosenId != null -> Mx.colors.ink
                         else -> Mx.colors.card
                     }
                     Box(
                         Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(48.dp)
+                            .clip(CircleShape)
                             .background(fill)
-                            .border(if (i == state.currentIndex) 2.dp else 0.5.dp, if (i == state.currentIndex) Mx.colors.accent else Mx.colors.separator, RoundedCornerShape(10.dp))
+                            .border(if (i == state.currentIndex) 2.dp else 1.dp, if (i == state.currentIndex) Mx.colors.accent else Mx.colors.hairline, CircleShape)
                             .clickable(enabled = !locked) { onJump(i) },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("${i + 1}", color = if (r != null) Color.White else if (locked) Mx.colors.tertiaryText else MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                        val onFill = when {
+                            r == null -> if (locked) Mx.colors.tertiaryText else MaterialTheme.colorScheme.onSurface
+                            fill == Mx.colors.wrong -> Color.White
+                            fill == Mx.colors.ink -> Mx.colors.onInk
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                        Text("${i + 1}", color = onFill, style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = 14.sp))
                         if (isMarked(q)) {
-                            Box(Modifier.align(Alignment.TopEnd).padding(3.dp).size(7.dp).clip(CircleShape).background(Mx.colors.flagged))
+                            Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(8.dp).clip(CircleShape).background(Mx.colors.accent).border(1.5.dp, Mx.colors.card, CircleShape))
                         }
                     }
                 }

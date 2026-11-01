@@ -1,6 +1,18 @@
 package quest.srihari.medxelite.ui.components
 
 import android.content.Context
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.ui.text.TextStyle
+import quest.srihari.medxelite.ui.theme.NType
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.Canvas
@@ -24,9 +36,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -62,47 +71,47 @@ import coil.compose.AsyncImage
 import quest.srihari.medxelite.auth.AuthSession
 import quest.srihari.medxelite.ui.theme.Mx
 
-// ---------------------------------------------------------------- Logo mark (MedxLogoMark.swift)
+// ---------------------------------------------------------------- Logo mark
 
+/** The MedX heartbeat glyph drawn as a dot-matrix trace, last dot in red. */
 @Composable
-fun MedxLogoMark(size: Dp = 96.dp, modifier: Modifier = Modifier) {
+fun MedxLogoMark(size: Dp = 96.dp, modifier: Modifier = Modifier, framed: Boolean = true) {
     val points = listOf(6f to 62f, 20f to 62f, 33f to 20f, 50f to 78f, 67f to 20f, 80f to 62f, 94f to 62f)
+    val ink = if (framed) Color.White else Mx.colors.ink
+    val accent = Mx.colors.accent
     Box(
         modifier
             .size(size)
-            .clip(RoundedCornerShape(size * 0.2237f))
-            .background(
-                Brush.linearGradient(
-                    listOf(Color(0xFF3D8FFF), Color(0xFF294DEB), Color(0xFF4A2ED1)),
-                ),
-            ),
+            .clip(RoundedCornerShape(size * 0.28f))
+            .then(if (framed) Modifier.background(Color.Black).border(1.dp, Color(0xFF2A2A2A), RoundedCornerShape(size * 0.28f)) else Modifier),
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            // Specular sheen.
-            drawCircle(
-                Brush.radialGradient(
-                    listOf(Color.White.copy(alpha = 0.45f), Color.Transparent),
-                    center = Offset(this.size.width * 0.22f, this.size.height * 0.16f),
-                    radius = this.size.width * 0.55f,
-                ),
-            )
-            val inset = this.size.width * 0.16f
+            val inset = this.size.width * (if (framed) 0.16f else 0.04f)
             val w = this.size.width - inset * 2
-            val path = Path()
-            points.forEachIndexed { i, (x, y) ->
-                val px = inset + x / 100f * w
-                val py = inset + y / 100f * w
-                if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
+            val pts = points.map { (x, y) -> Offset(inset + x / 100f * w, inset + y / 100f * w) }
+            // Walk the polyline and drop a dot every `gap` px.
+            val gap = this.size.width * 0.075f
+            val r = this.size.width * 0.03f
+            val dots = mutableListOf<Offset>()
+            var carry = 0f
+            for (i in 0 until pts.size - 1) {
+                val a = pts[i]
+                val b = pts[i + 1]
+                val len = (b - a).getDistance()
+                var t = carry
+                while (t <= len) {
+                    dots.add(a + (b - a) * (t / len))
+                    t += gap
+                }
+                carry = t - len
             }
-            drawPath(
-                path, Color.White,
-                style = Stroke(width = this.size.width * 0.105f, cap = StrokeCap.Round, join = StrokeJoin.Round),
-            )
+            dots.add(pts.last())
+            dots.forEachIndexed { i, d -> drawCircle(if (i == dots.size - 1) accent else ink, if (i == dots.size - 1) r * 1.35f else r, d) }
         }
     }
 }
 
-// ---------------------------------------------------------------- Grouped lists (iOS insetGrouped)
+// ---------------------------------------------------------------- Grouped lists (widget sections)
 
 fun LazyListScope.groupedSection(
     header: String? = null,
@@ -123,18 +132,17 @@ fun GroupedSection(
 ) {
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         if (header != null) {
-            Text(
-                header.uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                color = Mx.colors.secondaryText,
-                modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
-            )
+            Row(Modifier.padding(start = 6.dp, end = 6.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                NLabel(header, maxLines = 2)
+            }
         }
         Column(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Mx.colors.card),
+                .clip(RoundedCornerShape(24.dp))
+                .background(Mx.colors.card)
+                .border(1.dp, Mx.colors.hairline, RoundedCornerShape(24.dp))
+                .padding(vertical = 4.dp),
             content = content,
         )
         if (footer != null) {
@@ -142,7 +150,7 @@ fun GroupedSection(
                 footer,
                 style = MaterialTheme.typography.bodySmall,
                 color = Mx.colors.secondaryText,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
+                modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 8.dp),
             )
         }
     }
@@ -166,53 +174,76 @@ fun MedxRow(
         Row(
             Modifier
                 .fillMaxWidth()
+                .heightIn(min = 56.dp)
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (leading != null) {
                 leading()
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(14.dp))
             } else if (icon != null) {
                 IconTile(icon, iconTint)
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(14.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, color = titleColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = titleColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (!subtitle.isNullOrBlank()) {
+                    Spacer(Modifier.height(2.dp))
                     Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (trailing != null) {
-                Text(trailing, style = MaterialTheme.typography.bodyMedium, color = Mx.colors.secondaryText, modifier = Modifier.padding(start = 8.dp))
+                Text(
+                    trailing.uppercase(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Mx.colors.secondaryText,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
             }
             trailingContent?.invoke()
             if (showChevron && onClick != null) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Mx.colors.tertiaryText)
+                Spacer(Modifier.width(4.dp))
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = Mx.colors.tertiaryText, modifier = Modifier.size(20.dp))
             }
         }
-        if (divider) HorizontalDivider(Modifier.padding(start = if (icon != null || leading != null) 60.dp else 16.dp), color = Mx.colors.separator, thickness = 0.5.dp)
+        if (divider) {
+            HorizontalDivider(
+                Modifier.padding(start = if (icon != null || leading != null) 66.dp else 16.dp, end = 16.dp),
+                color = Mx.colors.hairline, thickness = 1.dp,
+            )
+        }
     }
 }
 
+/**
+ * Circular monochrome icon tile. A tint of accent / wrong is honoured (it means "attention");
+ * every other hue renders as ink on a raised disc.
+ */
 @Composable
-fun IconTile(icon: ImageVector, tint: Color, size: Dp = 30.dp) {
+fun IconTile(icon: ImageVector, tint: Color, size: Dp = 36.dp) {
+    val c = Mx.colors
+    val attention = tint == c.accent || tint == c.wrong
     Box(
-        Modifier.size(size).clip(RoundedCornerShape(size * 0.24f)).background(tint),
+        Modifier.size(size).clip(CircleShape).background(c.raised).border(1.dp, c.hairline, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = Color.White, modifier = Modifier.size(size * 0.6f))
+        Icon(icon, null, tint = if (attention) c.accent else c.ink, modifier = Modifier.size(size * 0.5f))
     }
 }
 
 @Composable
 fun Avatar(session: AuthSession?, size: Dp = 32.dp, modifier: Modifier = Modifier) {
-    val accent = Mx.colors.accent
+    val c = Mx.colors
     Box(
-        modifier.size(size).clip(CircleShape).background(Brush.linearGradient(listOf(accent.copy(alpha = 0.8f), accent))),
+        modifier.size(size).clip(CircleShape).background(c.raised).border(1.dp, c.separator, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Text(session?.initials ?: "?", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = (size.value * 0.4f).sp)
+        Text(
+            session?.initials ?: "?", color = c.ink,
+            style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.36f).sp),
+        )
         if (!session?.photoUrl.isNullOrBlank()) {
             AsyncImage(
                 model = session?.photoUrl, contentDescription = null, contentScale = ContentScale.Crop,
@@ -224,6 +255,25 @@ fun Avatar(session: AuthSession?, size: Dp = 32.dp, modifier: Modifier = Modifie
 
 // ---------------------------------------------------------------- States
 
+/** Three dots that light in turn (static when animations are off). */
+@Composable
+fun DotLoader(modifier: Modifier = Modifier) {
+    val c = Mx.colors
+    val reduce = Mx.reduceMotion
+    val phase = if (reduce) {
+        0f
+    } else {
+        val t = rememberInfiniteTransition(label = "dots")
+        t.animateFloat(0f, 3f, infiniteRepeatable(tween(900, easing = LinearEasing)), label = "dot").value
+    }
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        repeat(3) { i ->
+            val on = phase.toInt() == i
+            Box(Modifier.size(9.dp).clip(CircleShape).background(if (on) c.accent else c.ink.copy(alpha = 0.35f)))
+        }
+    }
+}
+
 @Composable
 fun LoadingState(title: String = "Loading", subtitle: String? = null) {
     Column(
@@ -231,10 +281,13 @@ fun LoadingState(title: String = "Loading", subtitle: String? = null) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        CircularProgressIndicator()
-        Spacer(Modifier.height(16.dp))
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        if (subtitle != null) Text(subtitle, color = Mx.colors.secondaryText, textAlign = TextAlign.Center)
+        DotLoader()
+        Spacer(Modifier.height(18.dp))
+        NLabel(title, color = MaterialTheme.colorScheme.onSurface, maxLines = 2)
+        if (subtitle != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(subtitle, color = Mx.colors.secondaryText, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
 
@@ -242,7 +295,7 @@ fun LoadingState(title: String = "Loading", subtitle: String? = null) {
 fun EmptyState(
     title: String,
     message: String? = null,
-    icon: ImageVector = Icons.Filled.WarningAmber,
+    icon: ImageVector = Icons.Outlined.WarningAmber,
     actionTitle: String? = null,
     onAction: (() -> Unit)? = null,
 ) {
@@ -251,16 +304,19 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, null, tint = Mx.colors.secondaryText, modifier = Modifier.size(44.dp))
-        Spacer(Modifier.height(12.dp))
-        Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
+            DotRing(0f, Modifier.matchParentSize(), dots = 24, dotSize = 4.dp)
+            Icon(icon, null, tint = Mx.colors.ink, modifier = Modifier.size(28.dp))
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
         if (message != null) {
-            Spacer(Modifier.height(4.dp))
-            Text(message, color = Mx.colors.secondaryText, textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 360.dp))
+            Spacer(Modifier.height(6.dp))
+            Text(message, color = Mx.colors.secondaryText, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.widthIn(max = 360.dp))
         }
         if (actionTitle != null && onAction != null) {
-            Spacer(Modifier.height(16.dp))
-            Button(onClick = onAction) { Text(actionTitle) }
+            Spacer(Modifier.height(20.dp))
+            NPill(actionTitle, onAction)
         }
     }
 }
@@ -279,10 +335,13 @@ fun MedxTopBar(
     val colors = TopAppBarDefaults.topAppBarColors(
         containerColor = Mx.colors.groupedBackground,
         scrolledContainerColor = Mx.colors.groupedBackground,
+        navigationIconContentColor = Mx.colors.ink,
+        actionIconContentColor = Mx.colors.ink,
+        titleContentColor = Mx.colors.ink,
     )
     val nav: @Composable () -> Unit = {
         if (onBack != null) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+            NCircleButton(Icons.AutoMirrored.Outlined.ArrowBack, "Back", onBack, Modifier.padding(start = 8.dp, end = 4.dp))
         }
     }
     if (large) {
@@ -292,29 +351,20 @@ fun MedxTopBar(
         )
     } else {
         TopAppBar(
-            title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleLarge) },
             navigationIcon = nav, actions = actions, colors = colors, scrollBehavior = scrollBehavior,
         )
     }
 }
 
 @Composable
-fun Pill(text: String, color: Color = Mx.colors.accent) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelSmall,
-        color = color,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.clip(RoundedCornerShape(50)).background(color.copy(alpha = 0.14f)).padding(horizontal = 8.dp, vertical = 3.dp),
-    )
+fun Pill(text: String, color: Color = Mx.colors.ink) {
+    NChip(text, color = if (color == Mx.colors.ink) null else color)
 }
 
 @Composable
-fun Card(modifier: Modifier = Modifier, padding: PaddingValues = PaddingValues(16.dp), content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Mx.colors.card).padding(padding),
-        content = content,
-    )
+fun Card(modifier: Modifier = Modifier, padding: PaddingValues = PaddingValues(18.dp), content: @Composable ColumnScope.() -> Unit) {
+    NWidget(modifier.fillMaxWidth(), padding = padding, content = content)
 }
 
 fun openCustomTab(context: Context, url: String) {

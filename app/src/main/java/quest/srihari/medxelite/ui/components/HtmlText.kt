@@ -101,7 +101,9 @@ fun HtmlText(
                     tv.setTextColor(argb)
                     tv.setLinkTextColor(linkColor)
                     tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp)
-                    tv.typeface = if (bold) android.graphics.Typeface.DEFAULT_BOLD else android.graphics.Typeface.DEFAULT
+                    tv.typeface = runCatching {
+                        androidx.core.content.res.ResourcesCompat.getFont(tv.context, if (bold) quest.srihari.medxelite.R.font.inter_semibold else quest.srihari.medxelite.R.font.inter_regular)
+                    }.getOrNull() ?: if (bold) android.graphics.Typeface.DEFAULT_BOLD else android.graphics.Typeface.DEFAULT
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -121,7 +123,7 @@ fun Figure(url: String) {
             .padding(top = 10.dp)
             .fillMaxWidth()
             .heightIn(max = 320.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(18.dp))
             .clickable { zoom = true },
     )
     if (zoom) {

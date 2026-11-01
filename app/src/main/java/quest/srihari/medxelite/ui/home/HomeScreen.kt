@@ -1,6 +1,24 @@
 package quest.srihari.medxelite.ui.home
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import quest.srihari.medxelite.ui.components.DotBars
+import quest.srihari.medxelite.ui.components.DotLine
+import quest.srihari.medxelite.ui.components.DotProgress
+import quest.srihari.medxelite.ui.components.DotRing
+import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.IconTile
+import quest.srihari.medxelite.ui.components.MedxLogoMark
+import quest.srihari.medxelite.ui.components.NChip
+import quest.srihari.medxelite.ui.components.NCircleButton
+import quest.srihari.medxelite.ui.components.NLabel
+import quest.srihari.medxelite.ui.components.NWidget
+import quest.srihari.medxelite.ui.components.WidgetHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,13 +37,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Checklist
+import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.TrackChanges
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -95,7 +113,6 @@ fun HomeScreen(nav: Navigator, modifier: Modifier = Modifier, onTab: (Tab) -> Un
     val history by Medx.activity.history.collectAsState()
     val scope = rememberCoroutineScope()
     var editExam by remember { mutableStateOf(false) }
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     val hour = LocalTime.now().hour
     val greeting = when {
@@ -104,18 +121,12 @@ fun HomeScreen(nav: Navigator, modifier: Modifier = Modifier, onTab: (Tab) -> Un
         hour < 17 -> "Good afternoon"
         else -> "Good evening"
     }
-    val title = session?.let { "$greeting, ${it.firstName}" } ?: greeting
     val resume = history.firstOrNull { !it.isCompleted && it.resumePosition > 0 }
 
     Scaffold(
-        modifier = modifier.nestedScroll(scroll.nestedScrollConnection),
+        modifier = modifier,
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         containerColor = Mx.colors.groupedBackground,
-        topBar = {
-            MedxTopBar(title, large = true, scrollBehavior = scroll, actions = {
-                IconButton(onClick = { nav.go("settings") }) { Avatar(session) }
-            })
-        },
     ) { pad ->
         PullToRefreshBox(
             isRefreshing = syncing,
@@ -124,56 +135,82 @@ fun HomeScreen(nav: Navigator, modifier: Modifier = Modifier, onTab: (Tab) -> Un
                 scope.launch { Medx.attempts.refresh() }
                 scope.launch { Medx.activity.sync() }
             },
-            modifier = Modifier.padding(pad).fillMaxSize(),
+            modifier = Modifier.padding(pad).fillMaxSize().statusBarsPadding(),
         ) {
-            LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 item {
-                    Text(
-                        LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")).uppercase(),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Mx.colors.secondaryText,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-                    )
+                    HomeHeader(greeting, session?.firstName, session) { nav.go("settings") }
                 }
                 item { Countdown(examName, examDate) { editExam = true } }
                 item {
-                    GoalCard(stats.answeredToday, goal, stats.streakDays, stats.correctToday)
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        GoalWidget(stats.answeredToday, goal, Modifier.weight(1f).fillMaxHeight())
+                        StreakWidget(stats.streakDays, stats.weeklyAnswered, Modifier.weight(1f).fillMaxHeight())
+                    }
+                }
+                item {
+                    val answered = stats.answeredToday
+                    val correct = stats.correctToday
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        NWidget(Modifier.weight(1f).fillMaxHeight()) {
+                            NLabel("Correct today")
+                            Spacer(Modifier.height(14.dp))
+                            DotText("$correct", size = 44.sp)
+                        }
+                        NWidget(Modifier.weight(1f).fillMaxHeight()) {
+                            NLabel("Accuracy today")
+                            Spacer(Modifier.height(14.dp))
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                DotText(if (answered > 0) "${Math.round(correct * 100.0 / answered)}" else "--", size = 44.sp)
+                                if (answered > 0) DotText("%", size = 24.sp, color = Mx.colors.accent, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
+                            }
+                        }
+                    }
                 }
                 if (resume != null) {
                     item {
-                        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                            Card(Modifier.clickable { nav.play(resume.video) }) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Mx.colors.accent),
-                                        contentAlignment = Alignment.Center,
-                                    ) { Icon(Icons.Filled.PlayArrow, null, tint = Color.White) }
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text("CONTINUE WATCHING", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
-                                        Text(resume.video.displayTitle, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                                        Text("${resume.video.subject} · resume at ${resume.formattedResumeTime}", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
-                                    }
+                        NWidget(Modifier.fillMaxWidth(), onClick = { nav.play(resume.video) }) {
+                            WidgetHeader("Continue watching")
+                            Spacer(Modifier.height(14.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                NCircleButton(Icons.Outlined.PlayArrow, "Resume", { nav.play(resume.video) }, filled = true, size = 52.dp)
+                                Spacer(Modifier.width(14.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(resume.video.displayTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    Spacer(Modifier.height(2.dp))
+                                    Text("${resume.video.subject} · resume at ${resume.formattedResumeTime}", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
-                                Spacer(Modifier.height(10.dp))
-                                LinearProgressIndicator(progress = { resume.progress.toFloat() }, modifier = Modifier.fillMaxWidth())
                             }
+                            Spacer(Modifier.height(16.dp))
+                            DotProgress(resume.progress.toFloat(), dots = 32, dotSize = 5.dp)
                         }
                     }
                 }
                 if (stats.due.isNotEmpty()) {
                     item {
-                        GroupedSection("Due for revision", "Spaced at 1, 3, 7, 21 and 45 days after each sitting.") {
+                        NWidget(Modifier.fillMaxWidth(), padding = PaddingValues(top = 18.dp, bottom = 6.dp)) {
+                            WidgetHeader("Due for revision", Modifier.padding(horizontal = 18.dp), trailing = {
+                                NLabel("${stats.due.size}", color = Mx.colors.ink)
+                            })
+                            Spacer(Modifier.height(6.dp))
                             stats.due.take(5).forEachIndexed { i, d ->
                                 MedxRow(
                                     d.name, "${d.subject} · ${d.sittings} sitting${if (d.sittings == 1) "" else "s"}",
-                                    icon = Icons.Filled.Refresh, iconTint = Hues.orange,
+                                    icon = Icons.Outlined.Refresh, iconTint = Hues.orange,
                                     divider = i < minOf(stats.due.size, 5) - 1,
                                 ) {
                                     nav.startSitting(RunnerPayload("qbank", d.moduleId, d.name, d.subject, SittingMode.REVISION))
                                 }
                             }
                         }
+                        Text(
+                            "Spaced at 1, 3, 7, 21 and 45 days after each sitting.",
+                            style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText,
+                            modifier = Modifier.padding(start = 6.dp, top = 8.dp),
+                        )
                     }
                 }
                 item { WeekCard(stats.weeklyAnswered, stats.weekSittings, stats.weekAccuracy) }
@@ -181,9 +218,9 @@ fun HomeScreen(nav: Navigator, modifier: Modifier = Modifier, onTab: (Tab) -> Un
                     item { AccuracyCard(stats.recentAccuracy, stats.overallAccuracy) }
                 }
                 item {
-                    GroupedSection {
-                        MedxRow("Syllabus checklist", "Tick off videos, QBank and revision per subject", icon = Icons.Filled.Checklist, iconTint = Hues.green, divider = true) { nav.go("tracker") }
-                        MedxRow("Study in QBank", "${stats.sittings} sittings so far", icon = Icons.Filled.School, iconTint = Hues.blue, divider = false) { onTab(Tab.QBANK) }
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        QuickAction("Syllabus checklist", "Tick off videos, QBank and revision", Icons.Outlined.Checklist, Modifier.weight(1f).fillMaxHeight()) { nav.go("tracker") }
+                        QuickAction("Study in QBank", "${stats.sittings} sittings so far", Icons.Outlined.School, Modifier.weight(1f).fillMaxHeight()) { onTab(Tab.QBANK) }
                     }
                 }
             }
@@ -194,127 +231,157 @@ fun HomeScreen(nav: Navigator, modifier: Modifier = Modifier, onTab: (Tab) -> Un
 }
 
 @Composable
+private fun HomeHeader(greeting: String, firstName: String?, session: quest.srihari.medxelite.auth.AuthSession?, onAvatar: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            MedxLogoMark(size = 30.dp, framed = false)
+            Spacer(Modifier.width(8.dp))
+            DotText("MEDX", size = 22.sp)
+            Spacer(Modifier.width(6.dp))
+            NLabel("Elite", modifier = Modifier.padding(top = 3.dp))
+            Spacer(Modifier.weight(1f))
+            Box(
+                Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onAvatar).semantics { contentDescription = "Settings" },
+                contentAlignment = Alignment.Center,
+            ) { Avatar(session, 40.dp) }
+        }
+        Spacer(Modifier.height(18.dp))
+        NLabel(LocalDate.now().format(DateTimeFormatter.ofPattern("EEE, d MMM")))
+        Spacer(Modifier.height(4.dp))
+        Text(
+            if (firstName.isNullOrBlank()) greeting else "$greeting,\n$firstName",
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Medium),
+            color = Mx.colors.ink,
+        )
+    }
+}
+
+@Composable
 private fun Countdown(name: String, date: LocalDate, onEdit: () -> Unit) {
     val days = maxOf(ChronoUnit.DAYS.between(LocalDate.now(), date), 0)
     val runUp = 1f - minOf(days, 365).toFloat() / 365f
-    val accent = Mx.colors.accent
-    Column(
-        Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(Brush.linearGradient(listOf(accent, accent.copy(alpha = 0.75f))))
-            .clickable(onClick = onEdit)
-            .padding(18.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.School, null, tint = Color.White, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(name.uppercase(), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text(
-                date.format(DateTimeFormatter.ofPattern("d MMM yyyy")),
-                color = Color.White, style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.22f)).padding(horizontal = 10.dp, vertical = 4.dp),
-            )
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text("$days", color = Color.White, fontSize = 64.sp, fontWeight = FontWeight.Black)
-            Spacer(Modifier.width(8.dp))
-            Text(if (days == 1L) "day to go" else "days to go", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, modifier = Modifier.padding(bottom = 14.dp))
-        }
-        LinearProgressIndicator(progress = { runUp }, color = Color.White, trackColor = Color.White.copy(alpha = 0.3f), modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(8.dp))
-        Row {
-            val weeks = days / 7
-            Text(if (weeks == 1L) "1 week left" else "$weeks weeks left", color = Color.White, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-            Text("Change", color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.labelLarge)
+    NWidget(Modifier.fillMaxWidth(), onClick = onEdit) {
+        Box(Modifier.fillMaxWidth()) {
+            Column {
+                WidgetHeader("$name countdown", trailing = {
+                    NChip(date.format(DateTimeFormatter.ofPattern("d MMM yyyy")))
+                })
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    DotText("$days", size = 104.sp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.padding(bottom = 18.dp)) {
+                        NLabel(if (days == 1L) "day" else "days", color = Mx.colors.ink, size = 13.sp)
+                        NLabel("to go", size = 13.sp)
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                DotProgress(runUp, dots = 30, dotSize = 6.dp)
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val weeks = days / 7
+                    NLabel(if (weeks == 1L) "1 week left" else "$weeks weeks left", Modifier.weight(1f), color = Mx.colors.ink)
+                    NLabel("Change")
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun GoalCard(answered: Int, goal: Int, streak: Int, correct: Int) {
+private fun GoalWidget(answered: Int, goal: Int, modifier: Modifier) {
     val met = answered >= goal
     val fraction = minOf(answered.toFloat() / maxOf(goal, 1), 1f)
-    val ringColor = if (met) Mx.colors.correct else Mx.colors.accent
-    val track = Mx.colors.separator
-    Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Card {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
-                    Canvas(Modifier.fillMaxSize()) {
-                        val stroke = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round)
-                        drawArc(track, 0f, 360f, false, style = stroke)
-                        drawArc(ringColor, -90f, 360f * fraction, false, style = stroke)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$answered", fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                        Text("of $goal", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
-                    }
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(if (met) "GOAL MET" else "TODAY'S GOAL", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = if (met) Mx.colors.correct else Mx.colors.secondaryText)
-                    Text(
-                        when {
-                            met -> "You've answered $answered questions today."
-                            answered == 0 -> "$goal questions today keeps the streak alive."
-                            else -> "${goal - answered} more to reach today's $goal."
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
+    NWidget(modifier) {
+        NLabel(if (met) "Goal met" else "Today's goal", color = if (met) Mx.colors.ink else Mx.colors.secondaryText)
+        Spacer(Modifier.height(12.dp))
+        DotRing(fraction, Modifier.size(112.dp).align(Alignment.CenterHorizontally), dots = 32, dotSize = 5.5.dp) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                DotText("$answered", size = 32.sp)
+                NLabel("of $goal", size = 10.sp)
             }
-            Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatTile("$streak", "day streak", Icons.Filled.LocalFireDepartment, Hues.orange, Modifier.weight(1f))
-                StatTile("$correct", "correct today", Icons.Filled.CheckCircle, Mx.colors.correct, Modifier.weight(1f))
-                StatTile(if (answered > 0) "${Math.round(correct * 100.0 / answered)}%" else "–", "accuracy today", Icons.Filled.TrackChanges, Mx.colors.accent, Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            when {
+                met -> "$answered answered today."
+                answered == 0 -> "$goal today keeps the streak alive."
+                else -> "${goal - answered} more to reach $goal."
+            },
+            style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText,
+        )
+    }
+}
+
+@Composable
+private fun StreakWidget(streak: Int, week: List<Int>, modifier: Modifier) {
+    val c = Mx.colors
+    NWidget(modifier) {
+        NLabel("Streak")
+        Spacer(Modifier.weight(1f))
+        DotText("$streak", size = 72.sp)
+        NLabel(if (streak == 1) "day in a row" else "days in a row", size = 10.sp)
+        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(14.dp))
+        val today = LocalDate.now()
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            week.takeLast(7).forEachIndexed { i, v ->
+                val day = today.minusDays((6 - i).toLong())
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        Modifier.size(9.dp).clip(CircleShape).background(
+                            when {
+                                v > 0 && i == 6 -> c.accent
+                                v > 0 -> c.ink
+                                else -> c.dotOff
+                            },
+                        ),
+                    )
+                    Spacer(Modifier.height(5.dp))
+                    NLabel(day.dayOfWeek.name.take(1), size = 9.sp, color = c.tertiaryText)
+                }
             }
         }
     }
 }
 
 @Composable
-fun StatTile(value: String, label: String, icon: ImageVector, hue: Color, modifier: Modifier = Modifier) {
-    Column(
-        modifier.clip(RoundedCornerShape(14.dp)).background(hue.copy(alpha = 0.12f)).padding(10.dp),
-    ) {
-        Icon(icon, null, tint = hue, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.height(4.dp))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText, maxLines = 1)
+private fun QuickAction(title: String, subtitle: String, icon: ImageVector, modifier: Modifier, onClick: () -> Unit) {
+    NWidget(modifier, onClick = onClick) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconTile(icon, Mx.colors.ink, 40.dp)
+            Spacer(Modifier.weight(1f))
+            Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, tint = Mx.colors.tertiaryText, modifier = Modifier.size(18.dp))
+        }
+        Spacer(Modifier.height(18.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2)
+        Spacer(Modifier.height(2.dp))
+        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, maxLines = 2)
     }
 }
 
 @Composable
 private fun WeekCard(buckets: List<Int>, sittings: Int, accuracy: Int?) {
-    val max = maxOf(buckets.maxOrNull() ?: 0, 1)
     val today = LocalDate.now()
-    GroupedSection("This week") {
-        Column(Modifier.padding(16.dp)) {
-            if (buckets.all { it == 0 }) {
-                Text("Nothing logged this week yet. One module is enough to start the streak.", color = Mx.colors.secondaryText)
-                Spacer(Modifier.height(12.dp))
-            } else {
-                Text("${buckets.sum()} questions · $sittings sittings${accuracy?.let { " · $it% accuracy" } ?: ""}", style = MaterialTheme.typography.bodyMedium, color = Mx.colors.secondaryText)
-                Spacer(Modifier.height(12.dp))
-            }
-            Row(Modifier.fillMaxWidth().height(110.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-                buckets.forEachIndexed { i, v ->
-                    val day = today.minusDays((6 - i).toLong())
-                    Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                        if (v > 0) Text("$v", style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height((70f * v / max).coerceAtLeast(4f).dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (i == 6) Mx.colors.accent else Mx.colors.accent.copy(alpha = if (v > 0) 0.45f else 0.15f)),
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(day.dayOfWeek.name.take(1), style = MaterialTheme.typography.labelSmall, color = Mx.colors.secondaryText)
-                    }
+    NWidget(Modifier.fillMaxWidth()) {
+        WidgetHeader("This week", trailing = {
+            if (buckets.any { it > 0 }) NLabel("${buckets.sum()} q", color = Mx.colors.ink)
+        })
+        Spacer(Modifier.height(8.dp))
+        Text(
+            if (buckets.all { it == 0 }) "Nothing logged this week yet. One module is enough to start the streak."
+            else "$sittings sittings${accuracy?.let { " · $it% accuracy" } ?: ""}",
+            style = MaterialTheme.typography.bodyMedium, color = Mx.colors.secondaryText,
+        )
+        Spacer(Modifier.height(16.dp))
+        DotBars(buckets, Modifier.fillMaxWidth().height(120.dp), rows = 9)
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth()) {
+            buckets.forEachIndexed { i, v ->
+                val day = today.minusDays((6 - i).toLong())
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    NLabel(day.dayOfWeek.name.take(1), size = 10.sp, color = if (i == 6) Mx.colors.ink else Mx.colors.tertiaryText)
+                    NLabel(if (v > 0) "$v" else "·", size = 9.sp, color = Mx.colors.tertiaryText)
                 }
             }
         }
@@ -323,14 +390,19 @@ private fun WeekCard(buckets: List<Int>, sittings: Int, accuracy: Int?) {
 
 @Composable
 private fun AccuracyCard(points: List<Int>, overall: Int?) {
-    val accent = Mx.colors.accent
-    GroupedSection("Accuracy over the last ${points.size} sittings", overall?.let { "Overall accuracy: $it%" }) {
-        Canvas(Modifier.fillMaxWidth().height(120.dp).padding(16.dp)) {
-            val step = size.width / (points.size - 1).coerceAtLeast(1)
-            val pts = points.mapIndexed { i, p -> Offset(i * step, size.height * (1f - p / 100f)) }
-            for (i in 0 until pts.size - 1) drawLine(accent, pts[i], pts[i + 1], strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
-            pts.forEach { drawCircle(accent, 4.dp.toPx(), it) }
+    NWidget(Modifier.fillMaxWidth()) {
+        WidgetHeader("Accuracy · last ${points.size} sittings")
+        Spacer(Modifier.height(10.dp))
+        if (overall != null) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                DotText("$overall", size = 44.sp)
+                DotText("%", size = 24.sp, color = Mx.colors.accent, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
+                Spacer(Modifier.width(10.dp))
+                NLabel("overall", Modifier.padding(bottom = 8.dp))
+            }
+            Spacer(Modifier.height(12.dp))
         }
+        DotLine(points, Modifier.fillMaxWidth().height(96.dp))
     }
 }
 
