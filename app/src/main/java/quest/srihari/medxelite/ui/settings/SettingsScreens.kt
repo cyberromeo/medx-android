@@ -122,33 +122,41 @@ fun SettingsScreen(nav: Navigator) {
                 }
             }
             item {
-                GroupedSection("Accent colour", "${accent.label} · used for buttons, progress and highlights.") {
-                    Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        MedxAccent.entries.forEach { a ->
-                            val on = a == accent
-                            Box(
-                                Modifier.size(48.dp).clip(CircleShape)
-                                    .clickable(role = androidx.compose.ui.semantics.Role.RadioButton) { Medx.prefs.setAccent(a) }
-                                    .semantics { contentDescription = a.label; selected = on },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Box(
-                                    Modifier.size(40.dp)
-                                        .border(if (on) 2.dp else 0.dp, if (on) Color(a.hex) else Color.Transparent, CircleShape)
-                                        .padding(if (on) 4.dp else 2.dp).clip(CircleShape).background(Color(a.hex)),
-                                    contentAlignment = Alignment.Center,
-                                ) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                GroupedSection("Accent colour") {
+                    Column(Modifier.padding(horizontal = 8.dp, vertical = 10.dp)) {
+                        MedxAccent.entries.chunked(4).forEach { row ->
+                            Row(Modifier.fillMaxWidth()) {
+                                row.forEach { a ->
+                                    val on = a == accent
+                                    Column(
+                                        Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
+                                            .clickable(role = androidx.compose.ui.semantics.Role.RadioButton) { Medx.prefs.setAccent(a) }
+                                            .semantics { selected = on }
+                                            .padding(vertical = 8.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+                                        Box(
+                                            Modifier.size(44.dp)
+                                                .border(2.dp, if (on) Color(a.hex) else Color.Transparent, CircleShape)
+                                                .padding(5.dp).clip(CircleShape).background(Color(a.hex)),
+                                            contentAlignment = Alignment.Center,
+                                        ) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(a.label, style = MaterialTheme.typography.labelMedium, color = if (on) Mx.colors.ink else Mx.colors.secondaryText, maxLines = 1)
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
             item {
-                GroupedSection("Appearance") {
-                    SegmentedTabs(
-                        MedxAppearance.entries.map { it.label }, MedxAppearance.entries.indexOf(appearance),
-                        Modifier.padding(12.dp),
-                    ) { i -> Medx.prefs.setAppearance(MedxAppearance.entries[i]) }
+                Column(Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                    quest.srihari.medxelite.ui.components.SectionHeader("Appearance")
+                    SegmentedTabs(MedxAppearance.entries.map { it.label }, MedxAppearance.entries.indexOf(appearance)) { i ->
+                        Medx.prefs.setAppearance(MedxAppearance.entries[i])
+                    }
+                    Text("Automatic follows your phone's light or dark setting.", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
                 }
             }
             item {

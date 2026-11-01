@@ -80,7 +80,7 @@ private val DarkBase = MedxColors(
     accent = Color(0xFF8FA5FF), isDark = true,
     ink = Color(0xFFF2F2F4), onAccent = Color(0xFF0E1A57),
     accentContainer = Color(0xFF243161), onAccentContainer = Color(0xFFDDE3FF),
-    sunken = Color(0xFF0B0C0E), raised = Color(0xFF24252A),
+    sunken = Color(0xFF2A2C31), raised = Color(0xFF26272C),
     correctContainer = Color(0xFF173828), wrongContainer = Color(0xFF3D1C1F), flaggedContainer = Color(0xFF3A2C12),
     streak = Color(0xFFFF8A5C), shadow = Color.Black,
 )
@@ -124,7 +124,20 @@ object Hues {
     val gray = Color(0xFF7A7F8C)
 
     private val cycle = listOf(blue, purple, pink, orange, green, teal, indigo, red, mint, cyan, brown, yellow)
-    fun forName(name: String): Color = cycle[Math.floorMod(name.hashCode(), cycle.size)]
+
+    /** FMGE subjects get a fixed, well-spread hue so neighbours in a list never clash. */
+    private val subjects = listOf(
+        "anat" to red, "physio" to pink, "bioch" to green, "patho" to purple, "pharma" to blue,
+        "micro" to teal, "forens" to brown, "community" to cyan, "psm" to cyan, "ophth" to indigo,
+        "ent" to orange, "medicine" to blue, "surg" to mint, "obst" to pink, "gyn" to pink, "paed" to yellow,
+        "pedia" to yellow, "ortho" to brown, "derma" to orange, "psych" to purple, "anaes" to teal,
+        "radio" to gray, "dent" to mint,
+    )
+    fun forName(name: String): Color {
+        val n = name.lowercase()
+        subjects.firstOrNull { (k, _) -> if (k == "ent") n == "ent" || n.startsWith("ent ") else k in n }?.let { return it.second }
+        return cycle[Math.floorMod(name.hashCode(), cycle.size)]
+    }
 }
 
 // ---------------------------------------------------------------- Type

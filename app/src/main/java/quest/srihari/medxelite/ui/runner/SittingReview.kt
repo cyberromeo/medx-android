@@ -239,7 +239,7 @@ fun SittingReview(
                                 HtmlText(q.displayText, sizeSp = 17f, bold = true, extraImages = q.images.orEmpty(), lineSpacing = 1.4f)
                                 Spacer(Modifier.height(14.dp))
                                 q.options.forEachIndexed { i, o ->
-                                    OptionButton(o, i, chosen = r?.chosenId == o.id, correct = q.isCorrect(o.id), revealed = gradable, locked = true) {}
+                                    OptionButton(o, i, chosen = r?.chosenId == o.id, correct = q.isCorrect(o.id), revealed = gradable, locked = true, nested = true) {}
                                     Spacer(Modifier.height(10.dp))
                                 }
                                 Explanation(q)

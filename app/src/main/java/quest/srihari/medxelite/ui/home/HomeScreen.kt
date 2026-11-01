@@ -163,9 +163,9 @@ fun HomeScreen(nav: Navigator, modifier: Modifier = Modifier, onTab: (Tab) -> Un
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         val acc = if (stats.answeredToday > 0) "${Math.round(stats.correctToday * 100.0 / stats.answeredToday)}%" else "–"
-                        StatTile("${stats.correctToday}", "Correct today", Icons.Rounded.CheckCircle, Hues.green, Modifier.weight(1f))
-                        StatTile(acc, "Accuracy today", Icons.Rounded.TrackChanges, Hues.blue, Modifier.weight(1f))
-                        StatTile("${stats.weekSittings}", "Sittings this week", Icons.Rounded.AutoGraph, Hues.purple, Modifier.weight(1f))
+                        StatTile("${stats.correctToday}", "Correct", Icons.Rounded.CheckCircle, Hues.green, Modifier.weight(1f))
+                        StatTile(acc, "Accuracy", Icons.Rounded.TrackChanges, Hues.blue, Modifier.weight(1f))
+                        StatTile("${stats.weekSittings}", "Week sittings", Icons.Rounded.AutoGraph, Hues.purple, Modifier.weight(1f))
                     }
                 }
                 item { Countdown(examName, examDate) { editExam = true } }
@@ -275,7 +275,7 @@ private fun TodayHero(answered: Int, goal: Int, streak: Int, onPractise: () -> U
                     ) {
                         Icon(Icons.Rounded.LocalFireDepartment, null, tint = if (c.isDark) c.streak else Color(0xFFFFC1A6), modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(if (streak == 1) "1-day streak" else "$streak-day streak", style = MaterialTheme.typography.labelMedium, color = fg)
+                        Text(when (streak) { 0 -> "Start a streak today"; 1 -> "1-day streak"; else -> "$streak-day streak" }, style = MaterialTheme.typography.labelMedium, color = fg)
                     }
                 }
             }
@@ -355,7 +355,7 @@ private fun WeekCard(buckets: List<Int>, sittings: Int, accuracy: Int?) {
                                 .fillMaxWidth()
                                 .height((84f * v / max).coerceAtLeast(6f).dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isToday) c.accent else if (v > 0) c.accentContainer else c.sunken),
+                                .background(if (isToday) c.accent else if (v > 0) c.accent.copy(alpha = if (c.isDark) 0.35f else 0.28f) else c.sunken),
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(

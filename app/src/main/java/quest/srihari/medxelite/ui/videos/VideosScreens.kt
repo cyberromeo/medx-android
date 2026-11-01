@@ -132,7 +132,7 @@ fun VideosScreen(nav: Navigator, modifier: Modifier = Modifier) {
                                         val watched = vids.count { v -> history.any { it.video.id == v.id && it.isCompleted } }
                                         MedxRow(
                                             title = subject,
-                                            subtitle = "${vids.size} classes · ${hours(vids.sumOf { it.durationSeconds ?: 0 })}" + if (watched > 0) " · $watched watched" else "",
+                                            subtitle = "${vids.size} class${if (vids.size == 1) "" else "es"} · ${hours(vids.sumOf { it.durationSeconds ?: 0 })}" + if (watched > 0) " · $watched watched" else "",
                                             leading = { SubjectBadge(subject) },
                                             divider = i < list.size - 1,
                                         ) { nav.openVideoGroup(subject, vids) }
@@ -153,7 +153,7 @@ fun VideoSubjectScreen(nav: Navigator, title: String, videos: List<RecordedVideo
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar(title, onBack = nav::back) }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
-                GroupedSection("${videos.size} classes") {
+                GroupedSection("${videos.size} class${if (videos.size == 1) "" else "es"}") {
                     videos.forEachIndexed { i, v ->
                         val h = history.firstOrNull { it.video.id == v.id }
                         VideoRow(v, h?.progress, h?.isCompleted == true, i < videos.size - 1) { nav.play(v) }

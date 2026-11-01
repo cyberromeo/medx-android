@@ -462,6 +462,7 @@ fun OptionButton(
     correct: Boolean,
     revealed: Boolean,
     locked: Boolean,
+    nested: Boolean = false,
     onClick: () -> Unit,
 ) {
     val c = Mx.colors
@@ -476,7 +477,7 @@ fun OptionButton(
             2 -> c.correctContainer
             3 -> c.wrongContainer
             1 -> c.accentContainer
-            else -> c.card
+            else -> if (nested) c.groupedBackground else c.card
         },
         label = "option",
     )
@@ -502,7 +503,7 @@ fun OptionButton(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 60.dp)
-            .then(if (state == 0 && !c.isDark) Modifier.softShadow(RowShape, 4.dp) else Modifier)
+            .then(if (state == 0 && !c.isDark && !nested) Modifier.softShadow(RowShape, 4.dp) else Modifier)
             .clip(RowShape)
             .background(fill)
             .border(if (state == 0) 1.dp else 2.dp, border, RowShape)

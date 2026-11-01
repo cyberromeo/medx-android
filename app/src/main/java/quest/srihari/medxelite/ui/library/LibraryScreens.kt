@@ -103,13 +103,13 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val features = listOf(
         Feature("Flashcards", "Image decks by subject", Icons.Filled.Style, Hues.purple, "flashcards"),
         Feature("Search", "Find any module", Icons.Filled.Search, Hues.blue, "search"),
-        Feature("Custom modules", "${custom.size} built", Icons.Filled.Tune, Hues.indigo, "custom"),
-        Feature("Bookmarks", "${bookmarks.size} saved", Icons.Filled.Bookmark, Hues.orange, "bookmarks"),
+        Feature("Custom modules", if (custom.isEmpty()) "Build your own paper" else "${custom.size} built", Icons.Filled.Tune, Hues.indigo, "custom"),
+        Feature("Bookmarks", if (bookmarks.isEmpty()) "None saved yet" else "${bookmarks.size} saved", Icons.Filled.Bookmark, Hues.orange, "bookmarks"),
         Feature("Batch papers", "ARISE tests", Icons.Filled.Description, Hues.teal, "batch"),
         Feature("VOD feed", "Newest recordings", Icons.Filled.VideoLibrary, Hues.pink, "vod"),
         Feature("Faceoff", "Duel a friend", Icons.Filled.Bolt, Hues.yellow, "faceoff"),
-        Feature("Watch history", "${history.size} classes", Icons.Filled.History, Hues.green, "history"),
-        Feature("Activity log", "${attempts.size} sittings", Icons.Filled.ListAlt, Hues.gray, "activity"),
+        Feature("Watch history", "${history.size} class${if (history.size == 1) "" else "es"}", Icons.Filled.History, Hues.green, "history"),
+        Feature("Activity log", "${attempts.size} sitting${if (attempts.size == 1) "" else "s"}", Icons.Filled.ListAlt, Hues.gray, "activity"),
     )
     Scaffold(
         modifier = modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -207,7 +207,7 @@ fun BookmarksScreen(nav: Navigator) {
                 HtmlText(b.question.displayText, sizeSp = 17f, bold = true, extraImages = b.question.images.orEmpty(), lineSpacing = 1.4f)
                 Spacer(Modifier.height(16.dp))
                 b.question.options.forEachIndexed { i, o ->
-                    OptionButton(o, i, chosen = false, correct = b.question.isCorrect(o.id), revealed = true, locked = true) {}
+                    OptionButton(o, i, chosen = false, correct = b.question.isCorrect(o.id), revealed = true, locked = true, nested = true) {}
                     Spacer(Modifier.height(10.dp))
                 }
                 Explanation(b.question)
