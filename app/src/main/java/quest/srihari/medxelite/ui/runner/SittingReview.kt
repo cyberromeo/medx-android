@@ -248,7 +248,7 @@ private fun ResultHero(
         Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()
             .glass(RoundedCornerShape(30.dp), glow = true, glowCorner = 30.dp),
     ) {
-        NeuralField(Modifier.matchParentSize(), nodes = 26, seed = 21, intensity = 0.6f, hollow = androidx.compose.ui.geometry.Offset(0.5f, 0.5f), hollowRadius = 0.62f)
+        NeuralField(Modifier.matchParentSize(), nodes = 26, seed = 21, intensity = 0.6f, hollow = androidx.compose.ui.geometry.Offset(0.5f, 0.5f), hollowRadius = 0.62f, fadeBottom = true)
         Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconChip(subjectIcon(subject), Hues.forName(subject), 26.dp)
