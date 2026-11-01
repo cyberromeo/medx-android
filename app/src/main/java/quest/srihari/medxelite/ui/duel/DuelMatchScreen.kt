@@ -169,7 +169,7 @@ private fun Banner(text: String, hue: Color) {
 // ================================================================ lobby + countdown
 
 @Composable
-private fun SeatCard(name: String, photo: String?, hue: Color, status: String, ok: Boolean, empty: Boolean, modifier: Modifier) {
+private fun SeatCard(name: String, photo: String?, hue: Color, status: String, ok: Boolean, empty: Boolean, modifier: Modifier, avatarName: String = name) {
     val c = Mx.colors
     Column(
         modifier.softShadow(RoundedCornerShape(24.dp), 8.dp).clip(RoundedCornerShape(24.dp)).background(c.card).padding(vertical = 20.dp, horizontal = 12.dp),
@@ -180,7 +180,7 @@ private fun SeatCard(name: String, photo: String?, hue: Color, status: String, o
                 Icon(Icons.Rounded.PersonOutline, null, tint = c.tertiaryText, modifier = Modifier.size(30.dp))
             }
         } else {
-            PlayerAvatar(name, photo, 64.dp, hue, ring = ok)
+            PlayerAvatar(avatarName, photo, 64.dp, hue, ring = ok)
         }
         Spacer(Modifier.height(10.dp))
         Text(name, fontFamily = Jakarta, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = if (empty) c.tertiaryText else c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -209,9 +209,9 @@ private fun Lobby(m: DuelMatch, onShare: (String) -> Unit) {
     val them = m.them
     val now = m.now
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(48.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SeatCard("You", g.photos[m.uid], DuelHues.me(), if (m.me?.ready == true) "Ready" else "Joining…", m.me?.ready == true, false, Modifier.weight(1f))
+            SeatCard("You", g.photos[m.uid]?.ifBlank { null }, DuelHues.me(), if (m.me?.ready == true) "Ready" else "Joining…", m.me?.ready == true, false, Modifier.weight(1f), avatarName = m.myName)
             Box(Modifier.padding(horizontal = 10.dp)) { VsBadge() }
             val theirStatus = when {
                 them == null -> if (invite != null) "Invited" else "Open seat"
@@ -381,7 +381,7 @@ private fun Live(m: DuelMatch) {
             Column(Modifier.weight(1f)) {
                 Text(
                     when (m.phase) {
-                        Phase.QUESTION -> "Faster right answers score more"
+                        Phase.QUESTION -> "Faster = more points"
                         Phase.ANSWERED -> "Locked in"
                         else -> if (m.qIndex + 1 >= g.total) "Final results coming…" else "Next question coming…"
                     },
@@ -458,8 +458,8 @@ private fun Results(m: DuelMatch, onShare: (String) -> Unit, onOpenRoom: (String
         }
         item {
             Row(Modifier.padding(horizontal = 20.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ResultCard("You", g.photos[m.uid], myScore?.points ?: 0, myScore?.correct ?: 0, g.total, m.me, DuelHues.me(), r?.winner == m.uid, Modifier.weight(1f))
-                ResultCard(m.themName, g.photos[themUid ?: ""], theirScore?.points ?: 0, theirScore?.correct ?: 0, g.total, m.them, DuelHues.them, r?.winner == themUid, Modifier.weight(1f))
+                ResultCard("You", m.myName, g.photos[m.uid], myScore?.points ?: 0, myScore?.correct ?: 0, g.total, m.me, DuelHues.me(), r?.winner == m.uid, Modifier.weight(1f))
+                ResultCard(m.themName, m.themName, g.photos[themUid ?: ""], theirScore?.points ?: 0, theirScore?.correct ?: 0, g.total, m.them, DuelHues.them, r?.winner == themUid, Modifier.weight(1f))
             }
         }
         item {
@@ -498,7 +498,7 @@ private fun Results(m: DuelMatch, onShare: (String) -> Unit, onOpenRoom: (String
 }
 
 @Composable
-private fun ResultCard(name: String, photo: String?, points: Int, correct: Int, total: Int, side: quest.srihari.medxelite.duel.DuelSide?, hue: Color, winner: Boolean, modifier: Modifier) {
+private fun ResultCard(name: String, avatarName: String, photo: String?, points: Int, correct: Int, total: Int, side: quest.srihari.medxelite.duel.DuelSide?, hue: Color, winner: Boolean, modifier: Modifier) {
     val c = Mx.colors
     val right = side?.answers?.values?.filter { it.correct && !it.timedOut }.orEmpty()
     val avg = if (right.isEmpty()) null else right.map { it.ms }.average() / 1000.0
@@ -507,7 +507,7 @@ private fun ResultCard(name: String, photo: String?, points: Int, correct: Int, 
             .then(if (winner) Modifier.border(2.dp, Hues.yellow, RoundedCornerShape(24.dp)) else Modifier).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PlayerAvatar(name, photo?.ifBlank { null }, 44.dp, hue)
+        PlayerAvatar(avatarName, photo?.ifBlank { null }, 44.dp, hue)
         Spacer(Modifier.height(8.dp))
         Text(name, style = MaterialTheme.typography.labelLarge, color = c.secondaryText, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text("%,d".format(points), fontFamily = Jakarta, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp, color = c.ink)

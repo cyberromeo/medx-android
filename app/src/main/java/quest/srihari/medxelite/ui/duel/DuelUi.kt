@@ -161,7 +161,7 @@ fun InvitePrompt(invite: DuelInvite, onOpenRoom: (String) -> Unit, onDismiss: ()
                 Box(Modifier.padding(horizontal = 10.dp).size(36.dp).clip(CircleShape).background(tint(Hues.yellow)), contentAlignment = Alignment.Center) {
                     Icon(Icons.Rounded.Bolt, null, tint = onTint(Hues.yellow), modifier = Modifier.size(22.dp))
                 }
-                PlayerAvatar("You", null, 56.dp, c.accent, ring = true)
+                PlayerAvatar(quest.srihari.medxelite.Medx.auth.current?.name ?: "You", quest.srihari.medxelite.Medx.auth.current?.photoUrl, 56.dp, c.accent, ring = true)
             }
             Spacer(Modifier.height(18.dp))
             Text("${invite.fromName} challenged you", style = MaterialTheme.typography.headlineSmall, color = c.ink, textAlign = TextAlign.Center)

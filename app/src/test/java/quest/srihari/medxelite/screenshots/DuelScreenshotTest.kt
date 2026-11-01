@@ -24,6 +24,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
@@ -205,7 +206,7 @@ class DuelScreenshotTest {
     @Test fun d01c_hubScrolled() {
         DuelDemo.installHub()
         show { DuelHubScreen(it, live = false) }
-        compose.onNodeWithText("History").performScrollTo()
+        compose.onNode(androidx.compose.ui.test.hasScrollToIndexAction()).performScrollToIndex(5)
         compose.waitForIdle()
         shot("d01c-duel-hub-history")
     }
@@ -323,9 +324,11 @@ class DuelScreenshotTest {
     @Test fun d06b_resultsReview() {
         val (g, mine, theirs) = finishedGame()
         show { MatchShot(g, mine, theirs, DuelDemo.now) }
-        compose.onNodeWithText("Q4").performScrollTo().performClick()
+        compose.onNode(androidx.compose.ui.test.hasScrollToIndexAction()).performScrollToIndex(7)
         compose.waitForIdle()
-        compose.onNodeWithText("Q4").performScrollTo()
+        compose.onNodeWithText("Q4").performClick()
+        compose.waitForIdle()
+        compose.onNode(androidx.compose.ui.test.hasScrollToIndexAction()).performScrollToIndex(7)
         compose.waitForIdle()
         shot("d06b-results-review")
     }
