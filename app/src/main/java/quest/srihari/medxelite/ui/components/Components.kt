@@ -24,9 +24,12 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.foundation.border
+import androidx.compose.material3.LocalTextStyle
+import quest.srihari.medxelite.ui.theme.Grotesk
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -70,12 +73,14 @@ fun MedxLogoMark(size: Dp = 96.dp, modifier: Modifier = Modifier) {
     Box(
         modifier
             .size(size)
+            .softGlow(Color(0xFF7C5CFF), Color(0xFF22D3EE), 0.55f)
             .clip(RoundedCornerShape(size * 0.2237f))
             .background(
                 Brush.linearGradient(
-                    listOf(Color(0xFF3D8FFF), Color(0xFF294DEB), Color(0xFF4A2ED1)),
+                    listOf(Color(0xFF8B5CF6), Color(0xFF5B4BFF), Color(0xFF0EA5E9)),
                 ),
-            ),
+            )
+            .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = 0.6f), Color.White.copy(alpha = 0.05f))), RoundedCornerShape(size * 0.2237f)),
     ) {
         Canvas(Modifier.fillMaxSize()) {
             // Specular sheen.
@@ -107,10 +112,11 @@ fun MedxLogoMark(size: Dp = 96.dp, modifier: Modifier = Modifier) {
 fun LazyListScope.groupedSection(
     header: String? = null,
     footer: String? = null,
+    icon: ImageVector? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     item {
-        GroupedSection(header, footer, content = content)
+        GroupedSection(header, footer, icon = icon, content = content)
     }
 }
 
@@ -119,22 +125,17 @@ fun GroupedSection(
     header: String? = null,
     footer: String? = null,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         if (header != null) {
-            Text(
-                header.uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                color = Mx.colors.secondaryText,
-                modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
-            )
+            SectionHeader(header, icon, Modifier.padding(start = 6.dp, bottom = 8.dp))
         }
         Column(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Mx.colors.card),
+                .glass(RoundedCornerShape(24.dp)),
             content = content,
         )
         if (footer != null) {
@@ -145,6 +146,21 @@ fun GroupedSection(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
             )
         }
+    }
+}
+
+/** Small-caps section label with an optional gradient-tinted glyph and a fading hairline. */
+@Composable
+fun SectionHeader(text: String, icon: ImageVector? = null, modifier: Modifier = Modifier) {
+    val c = Mx.colors
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        if (icon != null) {
+            Icon(icon, null, tint = c.accent, modifier = Modifier.size(15.dp))
+            Spacer(Modifier.width(6.dp))
+        }
+        Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = c.secondaryText, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.width(10.dp))
+        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(c.glowStart.copy(alpha = 0.35f), Color.Transparent))))
     }
 }
 
@@ -166,50 +182,46 @@ fun MedxRow(
         Row(
             Modifier
                 .fillMaxWidth()
-                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .then(if (onClick != null) Modifier.pressFx(scaleOnPress = false, onClick = onClick) else Modifier)
+                .padding(horizontal = 16.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (leading != null) {
                 leading()
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(14.dp))
             } else if (icon != null) {
                 IconTile(icon, iconTint)
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(14.dp))
             }
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, color = titleColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = titleColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (!subtitle.isNullOrBlank()) {
                     Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (trailing != null) {
-                Text(trailing, style = MaterialTheme.typography.bodyMedium, color = Mx.colors.secondaryText, modifier = Modifier.padding(start = 8.dp))
+                Text(trailing, style = MaterialTheme.typography.bodyMedium.merge(quest.srihari.medxelite.ui.theme.StatStyle).copy(fontSize = 13.sp), color = Mx.colors.secondaryText, modifier = Modifier.padding(start = 8.dp))
             }
             trailingContent?.invoke()
             if (showChevron && onClick != null) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Mx.colors.tertiaryText)
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = Mx.colors.tertiaryText)
             }
         }
-        if (divider) HorizontalDivider(Modifier.padding(start = if (icon != null || leading != null) 60.dp else 16.dp), color = Mx.colors.separator, thickness = 0.5.dp)
+        if (divider) HorizontalDivider(Modifier.padding(start = if (icon != null || leading != null) 66.dp else 16.dp, end = 16.dp), color = Mx.colors.separator, thickness = 1.dp)
     }
 }
 
 @Composable
-fun IconTile(icon: ImageVector, tint: Color, size: Dp = 30.dp) {
-    Box(
-        Modifier.size(size).clip(RoundedCornerShape(size * 0.24f)).background(tint),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, null, tint = Color.White, modifier = Modifier.size(size * 0.6f))
-    }
+fun IconTile(icon: ImageVector, tint: Color, size: Dp = 36.dp) {
+    IconChip(icon, tint, size)
 }
 
 @Composable
 fun Avatar(session: AuthSession?, size: Dp = 32.dp, modifier: Modifier = Modifier) {
     val accent = Mx.colors.accent
     Box(
-        modifier.size(size).clip(CircleShape).background(Brush.linearGradient(listOf(accent.copy(alpha = 0.8f), accent))),
+        modifier.size(size).clip(CircleShape).background(Mx.colors.fillBrush)
+            .border(1.5.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = 0.7f), Mx.colors.glowEnd.copy(alpha = 0.6f))), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Text(session?.initials ?: "?", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = (size.value * 0.4f).sp)
@@ -231,7 +243,7 @@ fun LoadingState(title: String = "Loading", subtitle: String? = null) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(color = Mx.colors.glowEnd, trackColor = Mx.colors.separator, strokeCap = StrokeCap.Round)
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.titleMedium)
         if (subtitle != null) Text(subtitle, color = Mx.colors.secondaryText, textAlign = TextAlign.Center)
@@ -242,7 +254,7 @@ fun LoadingState(title: String = "Loading", subtitle: String? = null) {
 fun EmptyState(
     title: String,
     message: String? = null,
-    icon: ImageVector = Icons.Filled.WarningAmber,
+    icon: ImageVector = Icons.Rounded.WarningAmber,
     actionTitle: String? = null,
     onAction: (() -> Unit)? = null,
 ) {
@@ -251,7 +263,7 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, null, tint = Mx.colors.secondaryText, modifier = Modifier.size(44.dp))
+        IconChip(icon, Mx.colors.glowStart, 64.dp)
         Spacer(Modifier.height(12.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         if (message != null) {
@@ -260,7 +272,7 @@ fun EmptyState(
         }
         if (actionTitle != null && onAction != null) {
             Spacer(Modifier.height(16.dp))
-            Button(onClick = onAction) { Text(actionTitle) }
+            GradientButton(onClick = onAction, height = 46.dp) { Text(actionTitle) }
         }
     }
 }
@@ -277,22 +289,25 @@ fun MedxTopBar(
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
 ) {
     val colors = TopAppBarDefaults.topAppBarColors(
-        containerColor = Mx.colors.groupedBackground,
-        scrolledContainerColor = Mx.colors.groupedBackground,
+        containerColor = Color.Transparent,
+        scrolledContainerColor = Mx.colors.base.copy(alpha = 0.82f),
     )
     val nav: @Composable () -> Unit = {
         if (onBack != null) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+            Box(Modifier.padding(start = 8.dp).size(40.dp).glass(CircleShape, onClick = onBack), contentAlignment = Alignment.Center) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", modifier = Modifier.size(20.dp))
+            }
         }
     }
     if (large) {
+        val brush = titleBrush()
         LargeTopAppBar(
-            title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = LocalTextStyle.current.copy(brush = brush, fontFamily = Grotesk, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)) },
             navigationIcon = nav, actions = actions, colors = colors, scrollBehavior = scrollBehavior,
         )
     } else {
         TopAppBar(
-            title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)) },
             navigationIcon = nav, actions = actions, colors = colors, scrollBehavior = scrollBehavior,
         )
     }
@@ -305,14 +320,21 @@ fun Pill(text: String, color: Color = Mx.colors.accent) {
         style = MaterialTheme.typography.labelSmall,
         color = color,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.clip(RoundedCornerShape(50)).background(color.copy(alpha = 0.14f)).padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = Modifier.clip(RoundedCornerShape(50)).background(color.copy(alpha = 0.14f))
+            .border(1.dp, color.copy(alpha = 0.35f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp),
     )
 }
 
 @Composable
-fun Card(modifier: Modifier = Modifier, padding: PaddingValues = PaddingValues(16.dp), content: @Composable ColumnScope.() -> Unit) {
+fun Card(
+    modifier: Modifier = Modifier,
+    padding: PaddingValues = PaddingValues(18.dp),
+    glow: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Mx.colors.card).padding(padding),
+        modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), glow = glow, onClick = onClick).padding(padding),
         content = content,
     )
 }

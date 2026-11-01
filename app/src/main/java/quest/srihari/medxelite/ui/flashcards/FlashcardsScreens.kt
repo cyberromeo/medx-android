@@ -1,5 +1,6 @@
 package quest.srihari.medxelite.ui.flashcards
 
+import quest.srihari.medxelite.ui.components.glass
 import android.content.res.Configuration
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -22,8 +23,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Style
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,7 +75,7 @@ fun FlashcardsScreen(nav: Navigator) {
                 is Load.Failed -> EmptyState("Couldn't load flashcards", s.message, actionTitle = "Try again") { scope.launch { Catalog.loadFlashcards(true) } }
                 is Load.Ready -> androidx.compose.foundation.lazy.LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                     item {
-                        GroupedSection("${s.value.size} subjects · ${s.value.sumOf { it.cardCount }} cards") {
+                        GroupedSection("${s.value.size} subjects · ${s.value.sumOf { it.cardCount }} cards", icon = Icons.Rounded.Style) {
                             s.value.forEachIndexed { i, sub ->
                                 MedxRow(
                                     sub.name, "${sub.cardCount} cards", leading = { SubjectBadge(sub.name) },
@@ -107,7 +108,7 @@ fun FlashcardDeckScreen(nav: Navigator, subjectId: Int) {
             return@Scaffold
         }
         if (subject.cards.isEmpty()) {
-            Box(Modifier.padding(pad)) { EmptyState("No cards", "There are no flashcards to display.", icon = Icons.Filled.Style) }
+            Box(Modifier.padding(pad)) { EmptyState("No cards", "There are no flashcards to display.", icon = Icons.Rounded.Style) }
             return@Scaffold
         }
         LazyVerticalGrid(
@@ -119,7 +120,7 @@ fun FlashcardDeckScreen(nav: Navigator, subjectId: Int) {
         ) {
             itemsIndexed(subject.cards, key = { i, c -> "${c.id}-$i" }) { i, card ->
                 Column(
-                    Modifier.clip(RoundedCornerShape(14.dp)).background(Mx.colors.card).clickable { openAt = i },
+                    Modifier.glass(RoundedCornerShape(20.dp), onClick = { openAt = i }),
                 ) {
                     AsyncImage(
                         card.imageUrl(landscape = false, tablet = tablet), card.name,
@@ -160,7 +161,7 @@ private fun DeckPager(cards: List<FlashcardCard>, start: Int, landscape: Boolean
                 Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.4f)).padding(top = 28.dp, start = 8.dp, end = 16.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, "Close", tint = Color.White) }
+                IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, "Close", tint = Color.White) }
                 Column(Modifier.weight(1f)) {
                     Text(cards[pager.currentPage].name, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     cards[pager.currentPage].chapter?.let { Text(it, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall, maxLines = 1) }

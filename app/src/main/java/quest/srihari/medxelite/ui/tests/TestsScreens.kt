@@ -1,5 +1,8 @@
 package quest.srihari.medxelite.ui.tests
 
+import androidx.compose.material.icons.rounded.Assignment
+import androidx.compose.material.icons.rounded.Groups
+import quest.srihari.medxelite.ui.components.GlassSegmented
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,11 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -79,7 +82,7 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             MedxTopBar("Tests", large = true, scrollBehavior = scroll, actions = {
-                IconButton(onClick = { nav.go("batch") }) { Icon(Icons.Filled.FolderOpen, "Batch papers") }
+                IconButton(onClick = { nav.go("batch") }) { Icon(Icons.Rounded.FolderOpen, "Batch papers") }
             })
         },
     ) { pad ->
@@ -98,13 +101,10 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     }
                     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
-                            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                SeriesGroup.entries.forEachIndexed { i, g ->
-                                    SegmentedButton(group == g, { group = g }, SegmentedButtonDefaults.itemShape(i, SeriesGroup.entries.size)) {
-                                        Text("${g.label} (${s.value.count { it.group == g }})")
-                                    }
-                                }
-                            }
+                            GlassSegmented(
+                                SeriesGroup.entries.map { g -> "${g.label} (${s.value.count { it.group == g }})" }, SeriesGroup.entries.indexOf(group),
+                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            ) { i -> group = SeriesGroup.entries[i] }
                         }
                         item {
                             Text(
@@ -116,16 +116,16 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                         if (papers.isEmpty()) item { EmptyState("Nothing here yet", "No papers in this group.") }
                         months.forEach { (label, list) ->
                             item(key = "${group.raw}-$label") {
-                                GroupedSection(label) {
+                                GroupedSection(label, icon = Icons.Rounded.Assignment) {
                                     list.forEachIndexed { i, p ->
                                         val best = bySource[p.id]?.maxByOrNull { it.score }
                                         MedxRow(
                                             title = p.title,
                                             subtitle = p.line + (best?.let { " · best ${it.score}/${it.total}" } ?: ""),
                                             icon = when (p.group) {
-                                                SeriesGroup.GRAND -> Icons.Filled.EmojiEvents
-                                                SeriesGroup.MINI -> Icons.Filled.Bolt
-                                                SeriesGroup.SUBJECT -> Icons.Filled.MenuBook
+                                                SeriesGroup.GRAND -> Icons.Rounded.EmojiEvents
+                                                SeriesGroup.MINI -> Icons.Rounded.Bolt
+                                                SeriesGroup.SUBJECT -> Icons.Rounded.MenuBook
                                             },
                                             iconTint = when (p.group) {
                                                 SeriesGroup.GRAND -> Hues.orange
@@ -181,7 +181,7 @@ fun BatchPapersScreen(nav: Navigator) {
                     val groups = s.value.groupBy { it.batch?.ifBlank { null } ?: "Papers" }
                     groups.forEach { (batch, list) ->
                         item(key = batch) {
-                            GroupedSection(batch) {
+                            GroupedSection(batch, icon = Icons.Rounded.Groups) {
                                 list.forEachIndexed { i, t ->
                                     val best: SittingAttempt? = bySource[t.testId]?.maxByOrNull { it.score }
                                     MedxRow(
@@ -189,7 +189,7 @@ fun BatchPapersScreen(nav: Navigator) {
                                         subtitle = "${t.questionCount} q · ${t.officialTimeMins} min" +
                                             (if (!t.gradable) " · no answer key" else "") +
                                             (best?.let { " · best ${it.score}/${it.total}" } ?: ""),
-                                        icon = Icons.Filled.Description,
+                                        icon = Icons.Rounded.Description,
                                         iconTint = if (t.gradable) Hues.blue else Hues.gray,
                                         divider = i < list.size - 1,
                                     ) { pick = t }

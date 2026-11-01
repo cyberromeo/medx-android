@@ -1,5 +1,14 @@
 package quest.srihari.medxelite.ui.qbank
 
+import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.ViewModule
+import androidx.compose.material.icons.rounded.Quiz
+import androidx.compose.ui.unit.sp
+import quest.srihari.medxelite.ui.components.GlassSegmented
+import quest.srihari.medxelite.ui.components.IconChip
+import quest.srihari.medxelite.ui.components.subjectIcon
+import quest.srihari.medxelite.ui.components.glass
+import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,12 +29,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -98,8 +107,8 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             MedxTopBar("QBank", large = true, scrollBehavior = scroll, actions = {
-                IconButton(onClick = { nav.go("search") }) { Icon(Icons.Filled.Search, "Search questions") }
-                IconButton(onClick = { nav.go("custom") }) { Icon(Icons.Filled.Tune, "Custom modules") }
+                IconButton(onClick = { nav.go("search") }) { Icon(Icons.Rounded.Search, "Search questions") }
+                IconButton(onClick = { nav.go("custom") }) { Icon(Icons.Rounded.Tune, "Custom modules") }
             })
         },
     ) { pad ->
@@ -118,31 +127,22 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     val marrowAvailable = state.value.any { it.bank == MedxBank.MARROW }
                     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                         item {
-                            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                MedxBank.entries.forEachIndexed { i, b ->
-                                    SegmentedButton(
-                                        selected = bank == b,
-                                        onClick = { Medx.prefs.setBank(b.raw) },
-                                        shape = SegmentedButtonDefaults.itemShape(i, MedxBank.entries.size),
-                                        enabled = b == MedxBank.ARISE || marrowAvailable,
-                                    ) { Text(b.label) }
-                                }
-                            }
+                            GlassSegmented(
+                                MedxBank.entries.map { it.label }, MedxBank.entries.indexOf(bank),
+                                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                enabled = { i -> MedxBank.entries[i] == MedxBank.ARISE || marrowAvailable },
+                            ) { i -> Medx.prefs.setBank(MedxBank.entries[i].raw) }
                         }
                         item {
                             val q = subjects.sumOf { it.questionCount }
                             val m = subjects.sumOf { it.moduleCount }
-                            Text(
-                                "${bank.eyebrow.uppercase()} · ${subjects.size} subjects · $m modules · ${"%,d".format(q)} questions",
-                                style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                            )
+                            BankStats(bank.eyebrow, subjects.size, m, q)
                         }
                         if (subjects.isEmpty()) {
                             item { EmptyState("No subjects yet", "This bank hasn't been published yet.") }
                         } else {
                             item {
-                                GroupedSection("Subjects") {
+                                GroupedSection("Subjects", icon = Icons.Rounded.Hub) {
                                     subjects.forEachIndexed { i, s ->
                                         val done = s.modules.count { practised.contains(it.id) }
                                         MedxRow(
@@ -164,14 +164,8 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SubjectBadge(name: String, size: Int = 34) {
-    val hue = Hues.forName(name)
-    Box(
-        Modifier.size(size.dp).clip(RoundedCornerShape((size * 0.26f).dp)).background(hue),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(name.take(2).uppercase(), color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-    }
+fun SubjectBadge(name: String, size: Int = 36) {
+    IconChip(subjectIcon(name), Hues.forName(name), size.dp)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -201,7 +195,7 @@ fun SubjectScreen(nav: Navigator, subjectId: String) {
                 }
             }
             items(subject.chapters, key = { it.id }) { chapter ->
-                GroupedSection(chapter.name) {
+                GroupedSection(chapter.name, icon = Icons.Rounded.Layers) {
                     chapter.modules.forEachIndexed { i, m ->
                         val sittings = bySource[m.id].orEmpty()
                         val best = sittings.maxOfOrNull { it.accuracyPercentage }
@@ -211,7 +205,7 @@ fun SubjectScreen(nav: Navigator, subjectId: String) {
                             divider = i < chapter.modules.size - 1,
                             trailingContent = {
                                 if (best != null) {
-                                    Icon(Icons.Filled.CheckCircle, null, tint = Mx.colors.correct, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Rounded.CheckCircle, null, tint = Mx.colors.correct, modifier = Modifier.size(16.dp))
                                     Text(" $best%", style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText)
                                 }
                             },
@@ -249,19 +243,19 @@ fun StartSessionSheet(
     onStart: (SittingMode) -> Unit,
 ) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state, containerColor = Mx.colors.groupedBackground) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state, containerColor = Mx.colors.raised) {
         Column(Modifier.padding(horizontal = 20.dp).navigationBarsPadding().padding(bottom = 16.dp)) {
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text("$subtitle · $questionCount questions", color = Mx.colors.secondaryText)
             Spacer(Modifier.height(16.dp))
-            ModeCard(SittingMode.EXAM, examBlurb ?: SittingMode.EXAM.description, Icons.Filled.Timer, Mx.colors.accent) { onStart(SittingMode.EXAM) }
+            ModeCard(SittingMode.EXAM, examBlurb ?: SittingMode.EXAM.description, Icons.Rounded.Timer, Mx.colors.accent) { onStart(SittingMode.EXAM) }
             Spacer(Modifier.height(10.dp))
-            ModeCard(SittingMode.REVISION, SittingMode.REVISION.description, Icons.Filled.MenuBook, Hues.green) { onStart(SittingMode.REVISION) }
+            ModeCard(SittingMode.REVISION, SittingMode.REVISION.description, Icons.Rounded.MenuBook, Hues.green) { onStart(SittingMode.REVISION) }
             if (history.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
                 Text("YOUR SITTINGS", style = MaterialTheme.typography.labelMedium, color = Mx.colors.secondaryText)
                 Spacer(Modifier.height(6.dp))
-                Column(Modifier.clip(RoundedCornerShape(14.dp)).background(Mx.colors.card)) {
+                Column(Modifier.glass(RoundedCornerShape(20.dp))) {
                     history.sortedByDescending { it.finishedAt }.take(5).forEachIndexed { i, a ->
                         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -281,17 +275,38 @@ fun StartSessionSheet(
 @Composable
 private fun ModeCard(mode: SittingMode, blurb: String, icon: ImageVector, hue: Color, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Mx.colors.card).clickable(onClick = onClick).padding(16.dp),
+        Modifier.fillMaxWidth().glass(RoundedCornerShape(22.dp), onClick = onClick).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(42.dp).clip(CircleShape).background(hue.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = hue)
-        }
+        IconChip(icon, hue, 44.dp)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(mode.displayName, fontWeight = FontWeight.SemiBold)
             Text(blurb, style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
         }
-        Icon(Icons.Filled.Bolt, null, tint = hue)
+        Icon(Icons.Rounded.Bolt, null, tint = hue)
+    }
+}
+
+/** Glass strip of the bank's totals with tabular figures. */
+@Composable
+private fun BankStats(eyebrow: String, subjects: Int, modules: Int, questions: Int) {
+    val c = Mx.colors
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+        Text(eyebrow.uppercase(), style = MaterialTheme.typography.labelMedium, color = c.secondaryText, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                Triple("%,d".format(subjects), "subjects", Icons.Rounded.Hub),
+                Triple("%,d".format(modules), "modules", Icons.Rounded.ViewModule),
+                Triple("%,d".format(questions), "questions", Icons.Rounded.Quiz),
+            ).forEach { (v, l, i) ->
+                Column(Modifier.weight(1f).glass(RoundedCornerShape(20.dp)).padding(horizontal = 12.dp, vertical = 12.dp)) {
+                    Icon(i, null, tint = c.accent, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.height(6.dp))
+                    quest.srihari.medxelite.ui.components.GradientText(v, quest.srihari.medxelite.ui.theme.StatStyle.copy(fontSize = 20.sp), maxLines = 1)
+                    Text(l, style = MaterialTheme.typography.labelSmall, color = c.secondaryText)
+                }
+            }
+        }
     }
 }

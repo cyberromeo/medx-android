@@ -24,7 +24,7 @@ private fun Context.medxPrefs() = getSharedPreferences("medx.prefs", Context.MOD
 // ---------------------------------------------------------------- Theme + goals
 
 enum class MedxAccent(val label: String, val hex: Long) {
-    BLUE("Blue", 0xFF0A84FF), INDIGO("Indigo", 0xFF5E5CE6), PURPLE("Purple", 0xFFBF5AF2),
+    AURORA("Aurora", 0xFF7C5CFF), BLUE("Blue", 0xFF0A84FF), INDIGO("Indigo", 0xFF5E5CE6), PURPLE("Purple", 0xFFBF5AF2),
     PINK("Pink", 0xFFFF375F), TEAL("Teal", 0xFF40C8E0), GREEN("Green", 0xFF30D158),
     ORANGE("Orange", 0xFFFF9F0A), GRAPHITE("Graphite", 0xFF98989D),
 }
@@ -34,8 +34,8 @@ enum class MedxAppearance(val label: String) { SYSTEM("Automatic"), LIGHT("Light
 class Prefs(context: Context) {
     private val p = context.medxPrefs()
 
-    val accent = MutableStateFlow(runCatching { MedxAccent.valueOf(p.getString("accent", "BLUE")!!) }.getOrDefault(MedxAccent.BLUE))
-    val appearance = MutableStateFlow(runCatching { MedxAppearance.valueOf(p.getString("appearance", "SYSTEM")!!) }.getOrDefault(MedxAppearance.SYSTEM))
+    val accent = MutableStateFlow(runCatching { MedxAccent.valueOf(p.getString("accent", "AURORA")!!) }.getOrDefault(MedxAccent.AURORA))
+    val appearance = MutableStateFlow(runCatching { MedxAppearance.valueOf(p.getString("appearance", "DARK")!!) }.getOrDefault(MedxAppearance.DARK))
     val dailyGoal = MutableStateFlow(p.getInt("goal", 50).takeIf { it > 0 } ?: 50)
     val examName = MutableStateFlow(p.getString("examName", "FMGE") ?: "FMGE")
     val examDate = MutableStateFlow(

@@ -1,5 +1,8 @@
 package quest.srihari.medxelite.ui.library
 
+import androidx.compose.material.icons.rounded.CalendarMonth
+import quest.srihari.medxelite.ui.components.subjectIcon
+import quest.srihari.medxelite.ui.components.glass
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,18 +26,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LibraryBooks
-import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Style
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.LibraryBooks
+import androidx.compose.material.icons.rounded.ListAlt
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Style
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -99,15 +102,15 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
     val custom by Medx.custom.modules.collectAsState()
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val features = listOf(
-        Feature("Flashcards", "Image decks by subject", Icons.Filled.Style, Hues.purple, "flashcards"),
-        Feature("Search", "Find any module", Icons.Filled.Search, Hues.blue, "search"),
-        Feature("Custom modules", "${custom.size} built", Icons.Filled.Tune, Hues.indigo, "custom"),
-        Feature("Bookmarks", "${bookmarks.size} saved", Icons.Filled.Bookmark, Hues.orange, "bookmarks"),
-        Feature("Batch papers", "ARISE tests", Icons.Filled.Description, Hues.teal, "batch"),
-        Feature("VOD feed", "Newest recordings", Icons.Filled.VideoLibrary, Hues.pink, "vod"),
-        Feature("Faceoff", "Duel a friend", Icons.Filled.Bolt, Hues.yellow, "faceoff"),
-        Feature("Watch history", "${history.size} classes", Icons.Filled.History, Hues.green, "history"),
-        Feature("Activity log", "${attempts.size} sittings", Icons.Filled.ListAlt, Hues.gray, "activity"),
+        Feature("Flashcards", "Image decks by subject", Icons.Rounded.Style, Hues.purple, "flashcards"),
+        Feature("Search", "Find any module", Icons.Rounded.Search, Hues.blue, "search"),
+        Feature("Custom modules", "${custom.size} built", Icons.Rounded.Tune, Hues.indigo, "custom"),
+        Feature("Bookmarks", "${bookmarks.size} saved", Icons.Rounded.Bookmark, Hues.orange, "bookmarks"),
+        Feature("Batch papers", "ARISE tests", Icons.Rounded.Description, Hues.teal, "batch"),
+        Feature("VOD feed", "Newest recordings", Icons.Rounded.VideoLibrary, Hues.pink, "vod"),
+        Feature("Faceoff", "Duel a friend", Icons.Rounded.Bolt, Hues.yellow, "faceoff"),
+        Feature("Watch history", "${history.size} classes", Icons.Rounded.History, Hues.green, "history"),
+        Feature("Activity log", "${attempts.size} sittings", Icons.Rounded.ListAlt, Hues.gray, "activity"),
     )
     Scaffold(
         modifier = modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -124,7 +127,7 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
         ) {
             items(features) { f ->
                 Column(
-                    Modifier.clip(RoundedCornerShape(18.dp)).background(Mx.colors.card).clickable { nav.go(f.route) }.padding(14.dp),
+                    Modifier.glass(RoundedCornerShape(22.dp), onClick = { nav.go(f.route) }).padding(14.dp),
                 ) {
                     IconTile(f.icon, f.hue, 36.dp)
                     Spacer(Modifier.height(18.dp))
@@ -165,20 +168,20 @@ fun BookmarksScreen(nav: Navigator) {
                         val qs = bookmarks.map { it.question }
                         nav.startSitting(RunnerPayload("custom", "bookmarks", "Bookmarked questions", "Bookmarks", SittingMode.REVISION, questions = qs, questionTags = bookmarks.map { it.sourceName }))
                     }) { Text("Practise") }
-                    IconButton(onClick = { confirmClear = true }) { Icon(Icons.Filled.Delete, "Clear all") }
+                    IconButton(onClick = { confirmClear = true }) { Icon(Icons.Rounded.Delete, "Clear all") }
                 }
             })
         },
     ) { pad ->
         if (bookmarks.isEmpty()) {
-            Box(Modifier.padding(pad)) { EmptyState("No bookmarks yet", "Tap the bookmark in any sitting to keep a question here.", icon = Icons.Filled.Bookmark) }
+            Box(Modifier.padding(pad)) { EmptyState("No bookmarks yet", "Tap the bookmark in any sitting to keep a question here.", icon = Icons.Rounded.Bookmark) }
             return@Scaffold
         }
         val bySubject = bookmarks.groupBy { it.subject.ifBlank { "Other" } }
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
             bySubject.forEach { (subject, list) ->
                 item(key = subject) {
-                    GroupedSection(subject) {
+                    GroupedSection(subject, icon = subjectIcon(subject)) {
                         list.forEachIndexed { i, b ->
                             MedxRow(b.previewText, "${b.sourceName} · ${relative(b.bookmarkedAt)}", divider = i < list.size - 1) { open = b }
                         }
@@ -226,12 +229,12 @@ fun WatchHistoryScreen(nav: Navigator) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             MedxTopBar("Watch history", onBack = nav::back, actions = {
-                if (history.isNotEmpty()) IconButton(onClick = { confirmClear = true }) { Icon(Icons.Filled.Delete, "Clear history") }
+                if (history.isNotEmpty()) IconButton(onClick = { confirmClear = true }) { Icon(Icons.Rounded.Delete, "Clear history") }
             })
         },
     ) { pad ->
         if (history.isEmpty()) {
-            Box(Modifier.padding(pad)) { EmptyState("Nothing watched yet", "Classes you play show up here with where you left off.", icon = Icons.Filled.History) }
+            Box(Modifier.padding(pad)) { EmptyState("Nothing watched yet", "Classes you play show up here with where you left off.", icon = Icons.Rounded.History) }
             return@Scaffold
         }
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
@@ -264,7 +267,7 @@ fun ActivityLogScreen(nav: Navigator) {
     LaunchedEffect(Unit) { Medx.attempts.refresh() }
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar("Activity log", onBack = nav::back) }) { pad ->
         if (attempts.isEmpty()) {
-            Box(Modifier.padding(pad)) { EmptyState("No sittings yet", "Finished QBank modules, tests and duels are listed here.", icon = Icons.Filled.ListAlt) }
+            Box(Modifier.padding(pad)) { EmptyState("No sittings yet", "Finished QBank modules, tests and duels are listed here.", icon = Icons.Rounded.ListAlt) }
             return@Scaffold
         }
         val byDay = attempts.groupBy { a ->
@@ -279,7 +282,7 @@ fun ActivityLogScreen(nav: Navigator) {
             }
             byDay.forEach { (day, list) ->
                 item(key = day) {
-                    GroupedSection(day) {
+                    GroupedSection(day, icon = Icons.Rounded.CalendarMonth) {
                         list.forEachIndexed { i, a ->
                             val time = a.finishedInstant?.atZone(ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern("h:mm a")) ?: ""
                             MedxRow(
@@ -287,11 +290,11 @@ fun ActivityLogScreen(nav: Navigator) {
                                 subtitle = "${AttemptKind.label(a.kind)} · ${if (a.mode == "exam") "Exam" else "Revision"} · $time" +
                                     if (Medx.attempts.isPending(a)) " · waiting to sync" else "",
                                 icon = when (a.kind) {
-                                    "qbank" -> Icons.Filled.LibraryBooks
-                                    "series" -> Icons.Filled.EmojiEvents
-                                    "duel" -> Icons.Filled.Bolt
-                                    "custom" -> Icons.Filled.Tune
-                                    else -> Icons.Filled.Description
+                                    "qbank" -> Icons.Rounded.LibraryBooks
+                                    "series" -> Icons.Rounded.EmojiEvents
+                                    "duel" -> Icons.Rounded.Bolt
+                                    "custom" -> Icons.Rounded.Tune
+                                    else -> Icons.Rounded.Description
                                 },
                                 iconTint = Hues.forName(a.kind),
                                 trailing = if (a.gradable == false) "${a.attempted}/${a.total}" else "${a.score}/${a.total}",
@@ -299,7 +302,7 @@ fun ActivityLogScreen(nav: Navigator) {
                                 divider = i < list.size - 1,
                                 trailingContent = {
                                     IconButton(onClick = { deleting = a }, modifier = Modifier.size(32.dp)) {
-                                        Icon(Icons.Filled.Delete, "Delete", tint = Mx.colors.tertiaryText, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Rounded.Delete, "Delete", tint = Mx.colors.tertiaryText, modifier = Modifier.size(18.dp))
                                     }
                                 },
                             ) {

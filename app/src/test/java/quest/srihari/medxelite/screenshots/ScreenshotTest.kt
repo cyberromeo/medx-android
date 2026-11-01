@@ -65,7 +65,7 @@ class ScreenshotTest {
     private fun show(signedIn: Boolean = true, content: @Composable (Navigator) -> Unit) {
         DemoData.install(signedIn)
         compose.setContent {
-            MedxTheme(MedxAccent.BLUE, MedxAppearance.SYSTEM) {
+            MedxTheme(MedxAccent.AURORA, MedxAppearance.DARK, reduceMotion = true) {
                 content(Navigator(rememberNavController()))
             }
         }

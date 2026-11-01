@@ -1,5 +1,13 @@
 package quest.srihari.medxelite.ui.faceoff
 
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.MeetingRoom
+import androidx.compose.material.icons.rounded.Timer
+import quest.srihari.medxelite.ui.components.glass
+import quest.srihari.medxelite.ui.components.GradientBar
+import quest.srihari.medxelite.ui.components.GradientButton
+import quest.srihari.medxelite.ui.components.GlassButton
+import quest.srihari.medxelite.ui.components.GlowChip
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -20,9 +28,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -124,7 +132,7 @@ fun FaceoffScreen(nav: Navigator) {
             item {
                 Card(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Bolt, null, tint = Hues.yellow)
+                        Icon(Icons.Rounded.Bolt, null, tint = Hues.yellow)
                         Spacer(Modifier.width(8.dp))
                         Text("Duel any MedX friend", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
@@ -135,7 +143,7 @@ fun FaceoffScreen(nav: Navigator) {
                 }
             }
             item {
-                GroupedSection("Join a room", error) {
+                GroupedSection("Join a room", error, icon = Icons.Rounded.MeetingRoom) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             code, { code = it.uppercase().filter { ch -> ch.isLetterOrDigit() }.take(8) },
@@ -145,16 +153,16 @@ fun FaceoffScreen(nav: Navigator) {
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(10.dp))
-                        Button(onClick = ::join, enabled = busy == null) {
+                        GradientButton(onClick = ::join, enabled = busy == null) {
                             if (busy == "join") CircularProgressIndicator(Modifier.height(18.dp).width(18.dp), strokeWidth = 2.dp) else Text("Join")
                         }
                     }
                 }
             }
             item {
-                GroupedSection("Create a room — length") {
+                GroupedSection("Create a room — length", icon = Icons.Rounded.Timer) {
                     Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        DuelRules.LENGTHS.forEach { l -> FilterChip(length == l, { length = l }, { Text(if (l == 0) "Whole paper" else "$l questions") }) }
+                        DuelRules.LENGTHS.forEach { l -> GlowChip(length == l, { length = l }, if (l == 0) "Whole paper" else "$l questions") }
                     }
                 }
             }
@@ -162,10 +170,10 @@ fun FaceoffScreen(nav: Navigator) {
                 is Load.Loading -> item { LoadingState("Loading papers") }
                 is Load.Failed -> item { EmptyState("Couldn't load papers", s.message) }
                 is Load.Ready -> item {
-                    GroupedSection("Pick a paper to deal from") {
+                    GroupedSection("Pick a paper to deal from", icon = Icons.Rounded.Description) {
                         val papers = s.value.sortedByDescending { it.startAt }.take(60)
                         papers.forEachIndexed { i, p ->
-                            MedxRow(p.title, "${p.group.label} · ${p.questions} questions", icon = Icons.Filled.EmojiEvents, iconTint = Hues.forName(p.title), divider = i < papers.size - 1) { pick = p }
+                            MedxRow(p.title, "${p.group.label} · ${p.questions} questions", icon = Icons.Rounded.EmojiEvents, iconTint = Hues.forName(p.title), divider = i < papers.size - 1) { pick = p }
                         }
                     }
                 }
@@ -225,7 +233,7 @@ private fun DuelRoomScreen(gameId: String, onClose: () -> Unit) {
                         putExtra(Intent.EXTRA_TEXT, "Faceoff me on MedX Elite — room code $gameId")
                     }
                     context.startActivity(Intent.createChooser(send, "Share room code"))
-                }) { Icon(Icons.Filled.Share, null); Spacer(Modifier.width(4.dp)); Text("Share") }
+                }) { Icon(Icons.Rounded.Share, null); Spacer(Modifier.width(4.dp)); Text("Share") }
             })
         },
     ) { pad ->
@@ -279,11 +287,11 @@ private fun Lobby(room: DuelRoom) {
             } else {
                 Text("${other.profile.ifBlank { "Your friend" }} joined", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { room.startGame() }, modifier = Modifier.fillMaxWidth()) { Text("Start the duel") }
+                GradientButton(onClick = { room.startGame() }, modifier = Modifier.fillMaxWidth()) { Text("Start the duel") }
             }
         } else {
             if (room.mine == null) {
-                Button(onClick = { room.join() }) { Text("Join ${room.hostName()}'s room") }
+                GradientButton(onClick = { room.join() }) { Text("Join ${room.hostName()}'s room") }
             } else {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(12.dp))
@@ -318,10 +326,11 @@ private fun Round(room: DuelRoom) {
     val theirs = room.shownTheirs
     Column(Modifier.fillMaxSize()) {
         Scoreboard(room)
-        LinearProgressIndicator(
-            progress = { room.remaining / DuelRules.PER_QUESTION.toFloat() },
-            color = if (room.remaining <= 10) Mx.colors.wrong else Mx.colors.accent,
-            modifier = Modifier.fillMaxWidth().height(4.dp),
+        GradientBar(
+            room.remaining / DuelRules.PER_QUESTION.toFloat(),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            height = 4.dp,
+            colors = if (room.remaining <= 10) listOf(Mx.colors.wrong, Mx.colors.wrong) else null,
         )
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
             Text(
@@ -351,14 +360,14 @@ private fun Round(room: DuelRoom) {
                 Explanation(q)
             }
         }
-        Box(Modifier.fillMaxWidth().background(Mx.colors.card).padding(16.dp)) {
+        Box(Modifier.fillMaxWidth().background(Mx.colors.raised.copy(alpha = 0.92f)).padding(16.dp)) {
             when (room.phase) {
                 DuelPhase.ASKED -> Text("Pick an answer — faster scores more.", color = Mx.colors.secondaryText)
                 DuelPhase.WAITING -> Text("Locked in. Waiting for ${room.theirName}…", color = Mx.colors.secondaryText)
                 else -> if (room.iVoted) {
                     Text(if (room.theyVoted) "Next question coming…" else "Waiting for ${room.theirName} to tap Next…", color = Mx.colors.secondaryText)
                 } else {
-                    Button(onClick = { room.voteNext() }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
+                    GradientButton(onClick = { room.voteNext() }, modifier = Modifier.fillMaxWidth()) { Text("Next") }
                 }
             }
         }
@@ -377,13 +386,13 @@ private fun Result(room: DuelRoom, onClose: () -> Unit) {
         else -> "It's a draw"
     }
     Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Icon(Icons.Filled.EmojiEvents, null, tint = Hues.orange, modifier = Modifier.height(64.dp).width(64.dp))
+        Icon(Icons.Rounded.EmojiEvents, null, tint = Hues.orange, modifier = Modifier.height(64.dp).width(64.dp))
         Text(verdict, fontSize = 32.sp, fontWeight = FontWeight.Black)
         Spacer(Modifier.height(20.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             listOf("You" to me, room.theirName to them).forEach { (name, sc) ->
                 Column(
-                    Modifier.clip(RoundedCornerShape(18.dp)).background(Mx.colors.card).padding(16.dp),
+                    Modifier.glass(RoundedCornerShape(24.dp), glow = true).padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(name, color = Mx.colors.secondaryText)
@@ -394,6 +403,6 @@ private fun Result(room: DuelRoom, onClose: () -> Unit) {
             }
         }
         Spacer(Modifier.height(24.dp))
-        OutlinedButton(onClick = onClose) { Text("Done") }
+        GlassButton(onClick = onClose) { Text("Done") }
     }
 }

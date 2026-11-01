@@ -1,5 +1,8 @@
 package quest.srihari.medxelite.ui.videos
 
+import androidx.compose.material.icons.rounded.PlayCircle
+import quest.srihari.medxelite.ui.components.subjectIcon
+import quest.srihari.medxelite.ui.components.GradientBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +18,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -90,8 +93,8 @@ fun VideosScreen(nav: Navigator, modifier: Modifier = Modifier) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             MedxTopBar("Classes", large = true, scrollBehavior = scroll, actions = {
-                IconButton(onClick = { nav.go("history") }) { Icon(Icons.Filled.History, "Watch history") }
-                IconButton(onClick = { nav.go("vod") }) { Icon(Icons.Filled.VideoLibrary, "VOD feed") }
+                IconButton(onClick = { nav.go("history") }) { Icon(Icons.Rounded.History, "Watch history") }
+                IconButton(onClick = { nav.go("vod") }) { Icon(Icons.Rounded.VideoLibrary, "VOD feed") }
             })
         },
     ) { pad ->
@@ -128,7 +131,7 @@ fun VideosScreen(nav: Navigator, modifier: Modifier = Modifier) {
                             val (name, subjects) = pair
                             val all = subjects.values.flatten()
                             item(key = bId) {
-                                GroupedSection(name, "${all.size} classes · ${hours(all.sumOf { it.durationSeconds ?: 0 })}") {
+                                GroupedSection(name, "${all.size} classes · ${hours(all.sumOf { it.durationSeconds ?: 0 })}", icon = subjectIcon(name)) {
                                     val list = subjects.entries.toList()
                                     list.forEachIndexed { i, (_, vids) ->
                                         val subject = vids.first().subject
@@ -156,7 +159,7 @@ fun VideoSubjectScreen(nav: Navigator, title: String, videos: List<RecordedVideo
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar(title, onBack = nav::back) }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
-                GroupedSection("${videos.size} classes") {
+                GroupedSection("${videos.size} classes", icon = Icons.Rounded.PlayCircle) {
                     videos.forEachIndexed { i, v ->
                         val h = history.firstOrNull { it.video.id == v.id }
                         VideoRow(v, h?.progress, h?.isCompleted == true, i < videos.size - 1) { nav.play(v) }
@@ -172,13 +175,13 @@ fun VideoRow(v: RecordedVideo, progress: Double?, completed: Boolean, divider: B
     MedxRow(
         title = v.displayTitle,
         subtitle = listOfNotNull(v.faculty, v.formattedDuration.ifBlank { null }).joinToString(" · "),
-        icon = if (completed) Icons.Filled.CheckCircle else Icons.Filled.PlayArrow,
+        icon = if (completed) Icons.Rounded.CheckCircle else Icons.Rounded.PlayArrow,
         iconTint = if (completed) Hues.green else Mx.colors.accent,
         divider = divider,
         showChevron = false,
         trailingContent = {
             if (progress != null && progress > 0 && !completed) {
-                LinearProgressIndicator(progress = { progress.toFloat() }, modifier = Modifier.width(48.dp))
+                GradientBar(progress.toFloat(), Modifier.width(48.dp), height = 4.dp)
             }
         },
         onClick = onClick,
@@ -234,7 +237,7 @@ fun VodFeedScreen(nav: Navigator) {
                             Box(Modifier.size(width = 72.dp, height = 44.dp).clip(RoundedCornerShape(8.dp)).background(Mx.colors.separator), contentAlignment = Alignment.Center) {
                                 if (v.thumbnailUrl.isNotBlank()) {
                                     AsyncImage(v.thumbnailUrl, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                } else Icon(Icons.Filled.PlayArrow, null, tint = Mx.colors.secondaryText)
+                                } else Icon(Icons.Rounded.PlayArrow, null, tint = Mx.colors.secondaryText)
                             }
                         },
                         showChevron = false,

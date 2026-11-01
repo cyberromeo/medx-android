@@ -1,5 +1,6 @@
 package quest.srihari.medxelite.ui.qbank
 
+import androidx.compose.material.icons.rounded.ViewModule
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,8 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -70,17 +71,17 @@ fun SearchScreen(nav: Navigator) {
                 OutlinedTextField(
                     query, { query = it },
                     placeholder = { Text("Subjects, chapters, modules…") },
-                    leadingIcon = { Icon(Icons.Filled.Search, null) },
+                    leadingIcon = { Icon(Icons.Rounded.Search, null) },
                     singleLine = true, shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).focusRequester(focus),
                 )
             }
             if (q.length >= 2 && hits.isEmpty() && bookmarkHits.isEmpty()) {
-                item { EmptyState("No results", "Nothing matches “$q”.", icon = Icons.Filled.Search) }
+                item { EmptyState("No results", "Nothing matches “$q”.", icon = Icons.Rounded.Search) }
             }
             if (hits.isNotEmpty()) {
                 item {
-                    GroupedSection("Modules (${hits.size})") {
+                    GroupedSection("Modules (${hits.size})", icon = Icons.Rounded.ViewModule) {
                         hits.forEachIndexed { i, h ->
                             MedxRow(h.module.name, "${h.bank} · ${h.subject} · ${h.chapter} · ${h.module.questionCount} q", divider = i < hits.size - 1) {
                                 pick = h.module to h.subject
@@ -91,9 +92,9 @@ fun SearchScreen(nav: Navigator) {
             }
             if (bookmarkHits.isNotEmpty()) {
                 item {
-                    GroupedSection("Bookmarked questions (${bookmarkHits.size})") {
+                    GroupedSection("Bookmarked questions (${bookmarkHits.size})", icon = Icons.Rounded.Bookmark) {
                         bookmarkHits.forEachIndexed { i, b ->
-                            MedxRow(b.previewText, b.sourceName, icon = Icons.Filled.Bookmark, iconTint = Hues.orange, divider = i < bookmarkHits.size - 1) {
+                            MedxRow(b.previewText, b.sourceName, icon = Icons.Rounded.Bookmark, iconTint = Hues.orange, divider = i < bookmarkHits.size - 1) {
                                 nav.go("bookmarks")
                             }
                         }

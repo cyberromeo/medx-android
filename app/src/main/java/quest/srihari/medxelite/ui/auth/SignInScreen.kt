@@ -1,5 +1,18 @@
 package quest.srihari.medxelite.ui.auth
 
+import quest.srihari.medxelite.ui.components.GradientButton
+import quest.srihari.medxelite.ui.components.GlassButton
+import quest.srihari.medxelite.ui.components.GradientText
+import quest.srihari.medxelite.ui.components.NeuralField
+import quest.srihari.medxelite.ui.components.glass
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.rounded.Quiz
+import androidx.compose.material.icons.rounded.Assignment
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.AlternateEmail
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,8 +35,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -150,14 +163,21 @@ fun SignInScreen() {
         }
     }
 
-    val accent = Mx.colors.accent
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(accent.copy(alpha = 0.18f), Mx.colors.groupedBackground, Mx.colors.groupedBackground)),
-            ),
-    ) {
+    val c = Mx.colors
+    val idle = if (c.isDark) Color.White.copy(alpha = 0.16f) else Color(0xFF1B1446).copy(alpha = 0.18f)
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = c.card, unfocusedContainerColor = c.card,
+        focusedBorderColor = c.glowEnd, unfocusedBorderColor = idle,
+        focusedLabelColor = c.glowEnd, unfocusedLabelColor = c.secondaryText,
+        cursorColor = c.glowEnd, focusedLeadingIconColor = c.glowEnd, unfocusedLeadingIconColor = c.secondaryText,
+        focusedTrailingIconColor = c.text, unfocusedTrailingIconColor = c.secondaryText,
+    )
+    Box(Modifier.fillMaxSize()) {
+        NeuralField(Modifier.fillMaxWidth().height(420.dp), nodes = 42, seed = 3)
+        Box(
+            Modifier.fillMaxWidth().height(420.dp)
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent, c.base))),
+        )
         Column(
             Modifier
                 .fillMaxSize()
@@ -167,26 +187,36 @@ fun SignInScreen() {
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(48.dp))
-            MedxLogoMark(size = 88.dp)
-            Spacer(Modifier.height(18.dp))
-            Text("MedX Elite", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(56.dp))
+            MedxLogoMark(size = 92.dp)
+            Spacer(Modifier.height(22.dp))
+            GradientText("MedX Elite", MaterialTheme.typography.displaySmall.copy(fontSize = 40.sp, letterSpacing = (-1.4).sp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 "Sign in to your MedX account",
                 color = Mx.colors.secondaryText,
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FeatureTag(Icons.Rounded.Quiz, "QBank")
+                FeatureTag(Icons.Rounded.Assignment, "Tests")
+                FeatureTag(Icons.Rounded.PlayCircle, "Classes")
+            }
+            Spacer(Modifier.height(28.dp))
 
-            Column(Modifier.widthIn(max = 440.dp).fillMaxWidth()) {
-                OutlinedButton(
+            Column(
+                Modifier.widthIn(max = 440.dp).fillMaxWidth()
+                    .glass(RoundedCornerShape(28.dp), glow = true)
+                    .padding(18.dp),
+            ) {
+                GlassButton(
                     onClick = ::signInGoogle,
                     enabled = busy == null,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (busy == "google") {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(Modifier.size(20.dp), color = c.glowEnd, strokeWidth = 2.dp)
                     } else {
                         GoogleG()
                         Spacer(Modifier.width(10.dp))
@@ -204,27 +234,31 @@ fun SignInScreen() {
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email") },
+                    leadingIcon = { Icon(Icons.Rounded.AlternateEmail, null) },
+                    colors = fieldColors,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(18.dp),
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
+                    leadingIcon = { Icon(Icons.Rounded.Lock, null) },
+                    colors = fieldColors,
                     singleLine = true,
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Go),
                     keyboardActions = KeyboardActions(onGo = { signInEmail() }),
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
-                            Icon(if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, "Show password")
+                            Icon(if (showPassword) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, "Show password")
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(18.dp),
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = ::forgot, enabled = busy == null) {
@@ -255,18 +289,21 @@ fun SignInScreen() {
                     TextButton(onClick = { openCustomTab(context, Config.WEB_ACTIVATE_URL) }) { Text("Activate on the MedX website") }
                 }
 
-                Button(
+                GradientButton(
                     onClick = ::signInEmail,
                     enabled = busy == null,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (busy == "email") {
                         CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                     } else {
-                        Text("Sign in", fontWeight = FontWeight.SemiBold)
+                        Text("Sign in")
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, modifier = Modifier.size(18.dp))
                     }
                 }
+            }
+            Column(Modifier.widthIn(max = 440.dp).fillMaxWidth()) {
 
                 Spacer(Modifier.height(28.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -295,5 +332,19 @@ private fun GoogleG() {
         contentAlignment = Alignment.Center,
     ) {
         Text("G", color = Color(0xFF4285F4), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+    }
+}
+
+@Composable
+private fun FeatureTag(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String) {
+    val c = Mx.colors
+    Row(
+        Modifier.clip(RoundedCornerShape(50)).background(c.card).border(1.dp, c.hairline, RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = c.accent, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(5.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.3.sp), color = c.text)
     }
 }

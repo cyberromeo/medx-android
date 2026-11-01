@@ -1,5 +1,19 @@
 package quest.srihari.medxelite.ui.settings
 
+import quest.srihari.medxelite.ui.components.subjectIcon
+import quest.srihari.medxelite.ui.components.neonSwitchColors
+import quest.srihari.medxelite.ui.components.glass
+import quest.srihari.medxelite.ui.components.softGlow
+import quest.srihari.medxelite.ui.components.GradientText
+import quest.srihari.medxelite.ui.components.titleBrush
+import quest.srihari.medxelite.ui.theme.Aurora
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Contrast
+import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.CloudSync
+import androidx.compose.material.icons.rounded.Info
+import quest.srihari.medxelite.ui.components.GlassSegmented
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,16 +34,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Checklist
+import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.TrackChanges
+import androidx.compose.material.icons.rounded.Vibration
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -103,12 +117,12 @@ fun SettingsScreen(nav: Navigator) {
     Scaffold(containerColor = Mx.colors.groupedBackground, topBar = { MedxTopBar("Settings", onBack = nav::back) }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
-                GroupedSection {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Avatar(session, 56.dp)
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), glow = true).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Avatar(session, 60.dp)
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(session?.name ?: "", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            GradientText(session?.name ?: "", MaterialTheme.typography.titleLarge, brush = titleBrush(), maxLines = 1)
                             Text(session?.email ?: "", color = Mx.colors.secondaryText)
                             Text(
                                 if (session?.provider == "google.com") "Signed in with Google" else "Signed in with email",
@@ -119,41 +133,44 @@ fun SettingsScreen(nav: Navigator) {
                 }
             }
             item {
-                GroupedSection("Accent colour") {
+                GroupedSection("Accent colour", icon = Icons.Rounded.Palette) {
                     Row(Modifier.horizontalScroll(rememberScrollState()).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         MedxAccent.entries.forEach { a ->
+                            val on = a == accent
+                            val end = if (a == MedxAccent.TEAL || a == MedxAccent.GREEN) Aurora.violet else Aurora.cyan
                             Box(
-                                Modifier.size(36.dp).clip(CircleShape).background(Color(a.hex))
-                                    .border(if (a == accent) 3.dp else 0.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                Modifier.size(40.dp)
+                                    .then(if (on) Modifier.softGlow(Color(a.hex), end, 0.55f) else Modifier)
+                                    .clip(CircleShape).background(Brush.linearGradient(listOf(Color(a.hex), end)))
+                                    .border(if (on) 2.5.dp else 1.dp, if (on) Color.White else Color.White.copy(alpha = 0.25f), CircleShape)
                                     .clickable { Medx.prefs.setAccent(a) },
                                 contentAlignment = Alignment.Center,
-                            ) { if (a == accent) Icon(Icons.Filled.Check, a.label, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                            ) { if (on) Icon(Icons.Rounded.Check, a.label, tint = Color.White, modifier = Modifier.size(18.dp)) }
                         }
                     }
                 }
             }
             item {
-                GroupedSection("Appearance") {
-                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(12.dp)) {
-                        MedxAppearance.entries.forEachIndexed { i, a ->
-                            SegmentedButton(appearance == a, { Medx.prefs.setAppearance(a) }, SegmentedButtonDefaults.itemShape(i, MedxAppearance.entries.size)) { Text(a.label) }
-                        }
-                    }
+                GroupedSection("Appearance", icon = Icons.Rounded.Contrast) {
+                    GlassSegmented(
+                        MedxAppearance.entries.map { it.label }, MedxAppearance.entries.indexOf(appearance),
+                        Modifier.padding(12.dp),
+                    ) { i -> Medx.prefs.setAppearance(MedxAppearance.entries[i]) }
                 }
             }
             item {
-                GroupedSection("Study") {
-                    MedxRow("Daily goal", icon = Icons.Filled.TrackChanges, iconTint = Hues.orange, trailing = "$goal questions") { editGoal = true }
-                    MedxRow("Syllabus checklist", icon = Icons.Filled.Checklist, iconTint = Hues.green) { nav.go("tracker") }
+                GroupedSection("Study", icon = Icons.Rounded.School) {
+                    MedxRow("Daily goal", icon = Icons.Rounded.TrackChanges, iconTint = Hues.orange, trailing = "$goal questions") { editGoal = true }
+                    MedxRow("Syllabus checklist", icon = Icons.Rounded.Checklist, iconTint = Hues.green) { nav.go("tracker") }
                     MedxRow(
-                        "Haptics", icon = Icons.Filled.Vibration, iconTint = Hues.pink, showChevron = false, divider = false,
-                        trailingContent = { Switch(haptics, { Medx.prefs.setHaptics(it) }) },
+                        "Haptics", icon = Icons.Rounded.Vibration, iconTint = Hues.pink, showChevron = false, divider = false,
+                        trailingContent = { Switch(haptics, { Medx.prefs.setHaptics(it) }, colors = neonSwitchColors()) },
                     )
                 }
             }
             item {
-                GroupedSection("Sync", "${stats.sittings} sittings on your account" + if (pending > 0) " · $pending waiting to upload" else "") {
-                    MedxRow(if (syncing) "Syncing…" else "Sync now", icon = Icons.Filled.Sync, iconTint = Hues.blue, showChevron = false) {
+                GroupedSection(icon = Icons.Rounded.CloudSync, header = "Sync", footer = "${stats.sittings} sittings on your account" + if (pending > 0) " · $pending waiting to upload" else "") {
+                    MedxRow(if (syncing) "Syncing…" else "Sync now", icon = Icons.Rounded.Sync, iconTint = Hues.blue, showChevron = false) {
                         Medx.cache.markAllStale()
                         scope.launch { Medx.attempts.refresh() }
                         scope.launch { Medx.activity.sync() }
@@ -162,7 +179,7 @@ fun SettingsScreen(nav: Navigator) {
                     MedxRow(
                         if (cleared) "Cache cleared" else "Clear downloaded content",
                         "${Medx.cache.sizeBytes() / 1024} KB of modules, papers and lists kept for offline",
-                        icon = Icons.Filled.CleaningServices, iconTint = Hues.gray, showChevron = false, divider = false,
+                        icon = Icons.Rounded.CleaningServices, iconTint = Hues.gray, showChevron = false, divider = false,
                     ) {
                         Medx.cache.clear()
                         cleared = true
@@ -170,20 +187,20 @@ fun SettingsScreen(nav: Navigator) {
                 }
             }
             item {
-                GroupedSection("About") {
-                    MedxRow("MedX on the web", Config.WEB_APP_URL.removePrefix("https://"), icon = Icons.Filled.Language, iconTint = Hues.teal) {
+                GroupedSection("About", icon = Icons.Rounded.Info) {
+                    MedxRow("MedX on the web", Config.WEB_APP_URL.removePrefix("https://"), icon = Icons.Rounded.Language, iconTint = Hues.teal) {
                         openCustomTab(context, Config.WEB_APP_URL)
                     }
-                    MedxRow("Version", icon = Icons.Filled.Code, iconTint = Hues.indigo, trailing = BuildConfig.VERSION_NAME, showChevron = false)
+                    MedxRow("Version", icon = Icons.Rounded.Code, iconTint = Hues.indigo, trailing = BuildConfig.VERSION_NAME, showChevron = false)
                     MedxRow(
                         "Backend", "Project ${Config.PROJECT_ID} · ${FirebaseBridge.status} · Google sign-in ${if (GoogleSignIn.isConfigured) "configured" else "not configured"}",
-                        icon = Icons.Filled.Cloud, iconTint = Hues.blue, showChevron = false, divider = false,
+                        icon = Icons.Rounded.Cloud, iconTint = Hues.blue, showChevron = false, divider = false,
                     )
                 }
             }
             item {
                 GroupedSection {
-                    MedxRow("Sign out", icon = Icons.AutoMirrored.Filled.Logout, iconTint = Mx.colors.wrong, titleColor = Mx.colors.wrong, showChevron = false, divider = false) {
+                    MedxRow("Sign out", icon = Icons.AutoMirrored.Rounded.Logout, iconTint = Mx.colors.wrong, titleColor = Mx.colors.wrong, showChevron = false, divider = false) {
                         confirmSignOut = true
                     }
                 }
@@ -264,7 +281,7 @@ fun SyllabusTrackerScreen(nav: Navigator) {
             }
             subjects.forEach { subject ->
                 item(key = subject) {
-                    GroupedSection(subject) {
+                    GroupedSection(subject, icon = subjectIcon(subject)) {
                         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 4.dp)) {
                             trackerFields.forEach { (key, label) ->
                                 val k = "$subject|$key"

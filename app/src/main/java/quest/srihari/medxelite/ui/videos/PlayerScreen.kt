@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ScreenRotation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -173,13 +173,13 @@ fun PlayerScreen(nav: Navigator, video: RecordedVideo?) {
         )
         Column(Modifier.statusBarsPadding().padding(4.dp)) {
             androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { nav.back() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
+                IconButton(onClick = { nav.back() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color.White) }
                 Text(video.displayTitle, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, modifier = Modifier.weight(1f))
                 IconButton(onClick = {
                     activity?.requestedOrientation =
                         if (activity?.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                         else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                }) { Icon(Icons.Filled.ScreenRotation, "Rotate", tint = Color.White) }
+                }) { Icon(Icons.Rounded.ScreenRotation, "Rotate", tint = Color.White) }
             }
         }
         error?.let {

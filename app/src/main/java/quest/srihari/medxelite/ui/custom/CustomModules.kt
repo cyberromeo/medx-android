@@ -1,5 +1,7 @@
 package quest.srihari.medxelite.ui.custom
 
+import quest.srihari.medxelite.ui.components.neonSwitchColors
+import quest.srihari.medxelite.ui.components.GlassSegmented
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -105,14 +107,14 @@ fun CustomModulesScreen(nav: Navigator) {
         containerColor = Mx.colors.groupedBackground,
         topBar = { MedxTopBar("Custom modules", onBack = nav::back) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { nav.go("custom/edit") }) { Icon(Icons.Filled.Add, "New module") }
+            FloatingActionButton(onClick = { nav.go("custom/edit") }) { Icon(Icons.Rounded.Add, "New module") }
         },
     ) { pad ->
         when {
             preparing -> Box(Modifier.padding(pad)) { LoadingState("Gathering questions") }
             modules.isEmpty() && loading -> Box(Modifier.padding(pad)) { LoadingState() }
             modules.isEmpty() -> Box(Modifier.padding(pad)) {
-                EmptyState("Build your own paper", "Pick modules from either bank, shuffle them, cap the count, and sit it like any other module.", icon = Icons.Filled.Tune, actionTitle = "New custom module") { nav.go("custom/edit") }
+                EmptyState("Build your own paper", "Pick modules from either bank, shuffle them, cap the count, and sit it like any other module.", icon = Icons.Rounded.Tune, actionTitle = "New custom module") { nav.go("custom/edit") }
             }
             else -> LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 96.dp)) {
                 item {
@@ -121,12 +123,12 @@ fun CustomModulesScreen(nav: Navigator) {
                             MedxRow(
                                 title = m.name.ifBlank { "Untitled" },
                                 subtitle = "${m.sources.size} modules · ${m.effectiveCount} questions" + (if (m.shuffle) " · shuffled" else "") + (if (m.note.isNotBlank()) " · ${m.note}" else ""),
-                                icon = Icons.Filled.PlayArrow, iconTint = Hues.indigo,
+                                icon = Icons.Rounded.PlayArrow, iconTint = Hues.indigo,
                                 showChevron = false,
                                 divider = i < modules.size - 1,
                                 trailingContent = {
-                                    IconButton(onClick = { nav.go("custom/edit?id=${m.id}") }) { Icon(Icons.Filled.Edit, "Edit", tint = Mx.colors.secondaryText) }
-                                    IconButton(onClick = { deleting = m }) { Icon(Icons.Filled.Delete, "Delete", tint = Mx.colors.secondaryText) }
+                                    IconButton(onClick = { nav.go("custom/edit?id=${m.id}") }) { Icon(Icons.Rounded.Edit, "Edit", tint = Mx.colors.secondaryText) }
+                                    IconButton(onClick = { deleting = m }) { Icon(Icons.Rounded.Delete, "Delete", tint = Mx.colors.secondaryText) }
                                 },
                             ) { start = m }
                         }
@@ -209,7 +211,7 @@ fun CustomModuleEditor(nav: Navigator, id: String?) {
     ) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
-                GroupedSection("Details", error) {
+                GroupedSection("Details", error, icon = Icons.Rounded.Tune) {
                     Column(Modifier.padding(16.dp)) {
                         OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                         Spacer(Modifier.height(8.dp))
@@ -217,7 +219,7 @@ fun CustomModuleEditor(nav: Navigator, id: String?) {
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("Shuffle questions", Modifier.weight(1f))
-                            Switch(shuffle, { shuffle = it })
+                            Switch(shuffle, { shuffle = it }, colors = neonSwitchColors())
                         }
                         OutlinedTextField(
                             limit, { limit = it.filter(Char::isDigit) }, label = { Text("Question cap (blank = all)") }, singleLine = true,
@@ -231,11 +233,10 @@ fun CustomModuleEditor(nav: Navigator, id: String?) {
                 }
             }
             item {
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    MedxBank.entries.forEachIndexed { i, b ->
-                        SegmentedButton(bank == b, { bank = b; openSubject = null }, SegmentedButtonDefaults.itemShape(i, 2)) { Text(b.label) }
-                    }
-                }
+                GlassSegmented(
+                    MedxBank.entries.map { it.label }, MedxBank.entries.indexOf(bank),
+                    Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                ) { i -> bank = MedxBank.entries[i]; openSubject = null }
             }
             when (val s = banks) {
                 is Load.Loading -> item { LoadingState() }
@@ -273,7 +274,7 @@ private fun SubjectPicker(
                 Text(subject.name, fontWeight = FontWeight.SemiBold)
                 Text("${subject.moduleCount} modules" + if (count > 0) " · $count picked" else "", style = MaterialTheme.typography.bodySmall, color = if (count > 0) Mx.colors.accent else Mx.colors.secondaryText)
             }
-            Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null)
+            Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null)
         }
         if (open) {
             subject.chapters.forEach { chapter ->

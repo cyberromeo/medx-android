@@ -1,5 +1,17 @@
 package quest.srihari.medxelite.ui.runner
 
+import quest.srihari.medxelite.ui.components.GradientButton
+import quest.srihari.medxelite.ui.components.GradientBar
+import quest.srihari.medxelite.ui.components.IconChip
+import quest.srihari.medxelite.ui.components.Burst
+import quest.srihari.medxelite.ui.components.glass
+import quest.srihari.medxelite.ui.components.softGlow
+import quest.srihari.medxelite.ui.theme.StatStyle
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Cancel
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
@@ -27,15 +39,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -152,14 +164,18 @@ fun RunnerScreen(nav: Navigator, payload: RunnerPayload?) {
         containerColor = Mx.colors.groupedBackground,
         topBar = {
             TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Mx.colors.groupedBackground),
-                navigationIcon = { IconButton(onClick = ::requestClose) { Icon(Icons.Filled.Close, "Close") } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                navigationIcon = {
+                    Box(Modifier.padding(start = 8.dp).size(40.dp).glass(CircleShape, onClick = ::requestClose), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Close, "Close", modifier = Modifier.size(20.dp))
+                    }
+                },
                 title = {
                     Column {
                         val ready = state.load == RunnerLoad.Ready && state.questions.isNotEmpty()
                         Text(
                             if (ready) "Question ${state.currentIndex + 1} of ${state.questions.size}" else payload.name,
-                            style = MaterialTheme.typography.titleMedium, maxLines = 1,
+                            style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp), maxLines = 1,
                         )
                         val parts = mutableListOf(if (state.isExam) "Exam" else "Revision")
                         if (state.isSectioned) parts.add("Block ${state.sectionIndex + 1} of ${state.sections.size}")
@@ -177,7 +193,7 @@ fun RunnerScreen(nav: Navigator, payload: RunnerPayload?) {
                                 Medx.activity.toggleBookmark(q, payload.id, payload.name, payload.subject)
                                 buzz()
                             }) {
-                                Icon(if (marked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder, "Bookmark", tint = if (marked) Mx.colors.flagged else MaterialTheme.colorScheme.onSurface)
+                                Icon(if (marked) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder, "Bookmark", tint = if (marked) Mx.colors.flagged else MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -187,23 +203,29 @@ fun RunnerScreen(nav: Navigator, payload: RunnerPayload?) {
         bottomBar = {
             if (state.load == RunnerLoad.Ready) {
                 Row(
-                    Modifier.fillMaxWidth().background(Mx.colors.card).navigationBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp),
+                    Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 10.dp)
+                        .glass(RoundedCornerShape(30.dp), fill = if (Mx.colors.isDark) Mx.colors.raised.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.92f))
+                        .padding(horizontal = 6.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(onClick = { state.goBack(); buzz() }, enabled = state.canGoBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null); Spacer(Modifier.width(4.dp)); Text("Previous")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, null); Spacer(Modifier.width(4.dp)); Text("Previous")
                     }
                     Spacer(Modifier.weight(1f))
-                    IconButton(onClick = { showNavigator = true }) { Icon(Icons.Filled.GridView, "Questions") }
+                    Box(Modifier.size(44.dp).glass(CircleShape, onClick = { showNavigator = true }), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.GridView, "Questions", modifier = Modifier.size(20.dp))
+                    }
                     Spacer(Modifier.weight(1f))
-                    Button(
+                    GradientButton(
                         onClick = { buzz(); if (state.isLastQuestion) showSubmit = true else state.next() },
                         enabled = state.canAdvanceNow,
-                        colors = if (state.isLastQuestion) ButtonDefaults.buttonColors(containerColor = Mx.colors.correct) else ButtonDefaults.buttonColors(),
+                        solid = if (state.isLastQuestion) Color(0xFF047857) else null,
+                        height = 46.dp,
+                        contentPadding = PaddingValues(horizontal = 20.dp),
                     ) {
                         Text(if (state.isLastQuestion) "Submit" else "Next")
                         Spacer(Modifier.width(4.dp))
-                        Icon(if (state.isLastQuestion) Icons.Filled.Check else Icons.AutoMirrored.Filled.ArrowForward, null)
+                        Icon(if (state.isLastQuestion) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.ArrowForward, null)
                     }
                 }
             }
@@ -306,9 +328,9 @@ private fun Clock(state: RunnerState) {
         ClockPhase.CRITICAL -> Mx.colors.wrong
     }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
-        Icon(Icons.Filled.Timer, null, tint = color, modifier = Modifier.size(16.dp))
+        Icon(Icons.Rounded.Timer, null, tint = color, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(2.dp))
-        Text(formatDuration(state.displaySeconds), color = color, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+        Text(formatDuration(state.displaySeconds), color = color, style = StatStyle.copy(fontSize = 14.sp))
     }
 }
 
@@ -317,13 +339,13 @@ private fun TimeBar(state: RunnerState) {
     val fraction = state.displaySeconds.toFloat() / maxOf(state.capacitySeconds, 1)
     val color by animateColorAsState(
         when (state.phase) {
-            ClockPhase.CALM -> Mx.colors.accent
+            ClockPhase.CALM -> Mx.colors.glowEnd
             ClockPhase.LOW -> Mx.colors.flagged
             ClockPhase.CRITICAL -> Mx.colors.wrong
         },
         label = "clock",
     )
-    LinearProgressIndicator(progress = { fraction.coerceIn(0f, 1f) }, color = color, trackColor = Mx.colors.separator, modifier = Modifier.fillMaxWidth().height(3.dp))
+    GradientBar(fraction, Modifier.fillMaxWidth().padding(horizontal = 18.dp), height = 4.dp, colors = if (state.phase == ClockPhase.CALM) null else listOf(color, color))
 }
 
 @Composable
@@ -386,37 +408,64 @@ fun OptionButton(
     locked: Boolean,
     onClick: () -> Unit,
 ) {
-    val accent = Mx.colors.accent
-    val (border, fill) = when {
-        revealed && correct -> Mx.colors.correct to Mx.colors.correct.copy(alpha = 0.12f)
-        revealed && chosen -> Mx.colors.wrong to Mx.colors.wrong.copy(alpha = 0.12f)
-        chosen -> accent to accent.copy(alpha = 0.12f)
-        else -> Color.Transparent to Mx.colors.card
+    val c = Mx.colors
+    val state = when {
+        revealed && correct -> 1 // right answer
+        revealed && chosen -> 2 // picked, wrong
+        chosen -> 3 // picked, not yet revealed
+        else -> 0
     }
+    val neon = when (state) {
+        1 -> c.correct
+        2 -> c.wrong
+        else -> c.glowStart
+    }
+    val shape = RoundedCornerShape(20.dp)
     val letter = option.label.ifBlank { ('A' + index).toString() }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(fill)
-            .border(1.5.dp, border, RoundedCornerShape(14.dp))
-            .clickable(enabled = !locked, onClick = onClick)
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val badge = when {
-            revealed && correct -> Mx.colors.correct
-            revealed && chosen -> Mx.colors.wrong
-            chosen -> accent
-            else -> Mx.colors.separator
+    val lit = state != 0
+    Box {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .then(if (lit) Modifier.softGlow(neon, if (state == 3) c.glowEnd else neon, if (c.isDark) 0.3f else 0.16f) else Modifier)
+                .glass(
+                    shape,
+                    fill = if (lit) neon.copy(alpha = if (c.isDark) 0.12f else 0.10f) else c.card,
+                    hairline = !lit,
+                    pressScale = !locked,
+                    enabled = !locked,
+                    onClick = onClick,
+                )
+                .then(
+                    if (lit) Modifier.border(1.5.dp, Brush.linearGradient(if (state == 3) listOf(c.glowStart, c.glowEnd) else listOf(neon, neon.copy(alpha = 0.45f))), shape)
+                    else Modifier,
+                )
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .then(
+                            when (state) {
+                                0 -> Modifier.background(c.glassStrong).border(1.dp, c.hairline, CircleShape)
+                                3 -> Modifier.background(c.fillBrush)
+                                else -> Modifier.background(Brush.linearGradient(listOf(neon, lerp(neon, Color.Black, 0.35f))))
+                            },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(letter, color = if (lit) Color.White else c.text, style = StatStyle.copy(fontSize = 14.sp))
+                }
+                Burst(play = state == 1 && chosen, color = c.correct, modifier = Modifier.size(34.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            HtmlText(option.text, Modifier.weight(1f), sizeSp = 16f)
+            if (state == 1) Icon(Icons.Rounded.CheckCircle, null, tint = c.correct)
+            if (state == 2) Icon(Icons.Rounded.Cancel, null, tint = c.wrong)
         }
-        Box(Modifier.size(30.dp).clip(CircleShape).background(badge), contentAlignment = Alignment.Center) {
-            Text(letter, color = if (chosen || (revealed && correct)) Color.White else MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-        }
-        Spacer(Modifier.width(12.dp))
-        HtmlText(option.text, Modifier.weight(1f), sizeSp = 16f)
-        if (revealed && correct) Icon(Icons.Filled.Check, null, tint = Mx.colors.correct)
-        if (revealed && chosen && !correct) Icon(Icons.Filled.Close, null, tint = Mx.colors.wrong)
     }
 }
 
@@ -425,14 +474,14 @@ fun Explanation(q: Question) {
     val text = q.explanation
     if (text.isNullOrBlank() && q.reference.isNullOrBlank()) return
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Mx.colors.card).padding(14.dp),
+        Modifier.fillMaxWidth().glass(RoundedCornerShape(22.dp)).padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Lightbulb, null, tint = Mx.colors.flagged, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Explanation", fontWeight = FontWeight.SemiBold)
+            IconChip(Icons.Rounded.Lightbulb, Mx.colors.flagged, 30.dp)
+            Spacer(Modifier.width(10.dp))
+            Text("Explanation", style = MaterialTheme.typography.titleMedium)
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(10.dp))
         if (!text.isNullOrBlank()) HtmlText(text, sizeSp = 15f)
         if (!q.reference.isNullOrBlank()) {
             Spacer(Modifier.height(6.dp))
@@ -445,7 +494,7 @@ fun Explanation(q: Question) {
 private fun HandoverOverlay(h: Handover, onBegin: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
         Column(
-            Modifier.padding(24.dp).widthIn(max = 420.dp).clip(RoundedCornerShape(24.dp)).background(Mx.colors.card).padding(24.dp),
+            Modifier.padding(24.dp).widthIn(max = 420.dp).glass(RoundedCornerShape(28.dp), fill = Mx.colors.raised, glow = true).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("${h.closedLabel} submitted", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -458,7 +507,7 @@ private fun HandoverOverlay(h: Handover, onBegin: () -> Unit) {
             Text("Next: ${h.nextLabel}", fontWeight = FontWeight.SemiBold)
             Text("${h.nextCount} questions · ${h.nextMinutes} minutes · ${h.remainingSections} block${if (h.remainingSections == 1) "" else "s"} left", color = Mx.colors.secondaryText, textAlign = TextAlign.Center)
             Spacer(Modifier.height(20.dp))
-            Button(onClick = onBegin, modifier = Modifier.fillMaxWidth()) { Text("Start ${h.nextLabel}") }
+            GradientButton(onClick = onBegin, modifier = Modifier.fillMaxWidth()) { Text("Start ${h.nextLabel}") }
         }
     }
 }
@@ -466,7 +515,7 @@ private fun HandoverOverlay(h: Handover, onBegin: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun NavigatorSheet(state: RunnerState, isMarked: (Question) -> Boolean, onDismiss: () -> Unit, onJump: (Int) -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Mx.colors.raised) {
         Column(Modifier.padding(horizontal = 16.dp).navigationBarsPadding().padding(bottom = 16.dp)) {
             Text(if (state.isSectioned) state.activeSection.label else "Questions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text("${state.sectionAnswered} of ${state.questionsInSection.size} answered", color = Mx.colors.secondaryText)
@@ -481,15 +530,15 @@ private fun NavigatorSheet(state: RunnerState, isMarked: (Question) -> Boolean, 
                         r == null -> Mx.colors.card
                         !state.isExam && r.correct -> Mx.colors.correct
                         !state.isExam -> Mx.colors.wrong
-                        r.chosenId != null -> Mx.colors.accent
+                        r.chosenId != null -> Mx.colors.fillStart
                         else -> Mx.colors.card
                     }
                     Box(
                         Modifier
                             .size(44.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(14.dp))
                             .background(fill)
-                            .border(if (i == state.currentIndex) 2.dp else 0.5.dp, if (i == state.currentIndex) Mx.colors.accent else Mx.colors.separator, RoundedCornerShape(10.dp))
+                            .border(if (i == state.currentIndex) 2.dp else 1.dp, if (i == state.currentIndex) Mx.colors.glowBrush else Mx.colors.hairline, RoundedCornerShape(14.dp))
                             .clickable(enabled = !locked) { onJump(i) },
                         contentAlignment = Alignment.Center,
                     ) {

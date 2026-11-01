@@ -1,16 +1,19 @@
 package quest.srihari.medxelite.ui
 
+import quest.srihari.medxelite.ui.components.GlassBottomBar
+import quest.srihari.medxelite.ui.components.NavItem
+import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
-import androidx.compose.material.icons.outlined.Assignment
-import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
+import androidx.compose.material.icons.rounded.Assignment
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -53,12 +56,14 @@ import quest.srihari.medxelite.ui.videos.VideosScreen
 import quest.srihari.medxelite.ui.videos.VodFeedScreen
 
 enum class Tab(val label: String, val icon: ImageVector) {
-    HOME("Home", Icons.Outlined.Home),
-    QBANK("QBank", Icons.AutoMirrored.Outlined.LibraryBooks),
-    TESTS("Tests", Icons.Outlined.Assignment),
-    CLASSES("Classes", Icons.Outlined.PlayCircle),
-    LIBRARY("Library", Icons.Outlined.GridView),
+    HOME("Home", Icons.Rounded.Home),
+    QBANK("QBank", Icons.AutoMirrored.Rounded.LibraryBooks),
+    TESTS("Tests", Icons.Rounded.Assignment),
+    CLASSES("Classes", Icons.Rounded.PlayCircle),
+    LIBRARY("Library", Icons.Rounded.GridView),
 }
+
+private val navItems = Tab.entries.map { NavItem(it.label, it.icon) }
 
 /** Hand-off for arguments too rich for a route string (AppState.pendingRunnerPayload on iOS). */
 object Handoff {
@@ -105,17 +110,9 @@ fun AppRoot() {
     ) {
         composable("tabs") {
             Scaffold(
+                containerColor = Color.Transparent,
                 bottomBar = {
-                    NavigationBar {
-                        Tab.entries.forEach { t ->
-                            NavigationBarItem(
-                                selected = tab == t,
-                                onClick = { tab = t },
-                                icon = { Icon(t.icon, null) },
-                                label = { Text(t.label) },
-                            )
-                        }
-                    }
+                    GlassBottomBar(navItems, tab.ordinal) { tab = Tab.entries[it] }
                 },
             ) { padding ->
                 val m = Modifier.padding(bottom = padding.calculateBottomPadding())

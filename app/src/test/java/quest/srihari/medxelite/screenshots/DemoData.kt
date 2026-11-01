@@ -187,8 +187,8 @@ object DemoData {
     @Suppress("UNCHECKED_CAST")
     fun install(signedIn: Boolean = true) {
         (Medx.auth.session as MutableStateFlow<AuthSession?>).value = if (signedIn) session else null
-        Medx.prefs.accent.value = MedxAccent.BLUE
-        Medx.prefs.appearance.value = MedxAppearance.SYSTEM
+        Medx.prefs.accent.value = MedxAccent.AURORA
+        Medx.prefs.appearance.value = MedxAppearance.DARK
         Medx.prefs.dailyGoal.value = 50
         Medx.prefs.examName.value = "FMGE"
         Medx.prefs.examDate.value = LocalDate.of(2027, 1, 9)
