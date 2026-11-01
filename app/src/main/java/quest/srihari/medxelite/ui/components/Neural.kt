@@ -193,6 +193,8 @@ fun NeuralField(
     hollow: Offset? = null,
     /** Radius of the clear region as a fraction of the width. */
     hollowRadius: Float = 0.4f,
+    /** Fade the field out over its lower third (for fields that end mid-screen). */
+    fadeBottom: Boolean = false,
 ) {
     val time = rememberMotionClock()
     val c = Mx.colors
@@ -217,9 +219,10 @@ fun NeuralField(
         val hc = hollow?.let { Offset(it.x * w, it.y * h) }
         val hr = hollowRadius * w
         fun keep(p: Offset): Float {
-            if (hc == null) return 1f
+            val fb = if (fadeBottom) (1f - (p.y / h - 0.6f) / 0.4f).coerceIn(0f, 1f) else 1f
+            if (hc == null) return fb
             val d = hypot(p.x - hc.x, p.y - hc.y) / hr
-            return ((d - 0.55f) / 0.45f).coerceIn(0f, 1f)
+            return ((d - 0.55f) / 0.45f).coerceIn(0f, 1f) * fb
         }
         val line = 1.dp.toPx()
         for (i in pos.indices) for (j in i + 1 until pos.size) {
@@ -240,7 +243,7 @@ fun NeuralField(
                 val rr = (7f + 5f * pulse).dp.toPx()
                 drawCircle(Brush.radialGradient(listOf(col.copy(alpha = 0.55f * intensity * k), col.clear), p, rr), rr, p)
             }
-            drawCircle(Color.White.copy(alpha = (0.55f + 0.4f * pulse) * intensity * k), n.r.dp.toPx() * (if (n.hub) 1.5f else 1f), p)
+            drawCircle((if (c.isDark) Color.White else col).copy(alpha = (0.55f + 0.4f * pulse) * intensity * k), n.r.dp.toPx() * (if (n.hub) 1.5f else 1f), p)
         }
     }
 }
@@ -248,21 +251,30 @@ fun NeuralField(
 // ================================================================ Glass
 
 /** Soft coloured halo behind a surface; draws outside the bounds, so place it before clip. */
-fun Modifier.softGlow(start: Color, end: Color = start, alpha: Float = 0.35f, corner: Dp? = 24.dp): Modifier = drawBehind {
+fun Modifier.softGlow(start: Color, end: Color = start, alpha: Float = 0.35f, corner: Dp? = 24.dp, spread: Dp = 18.dp): Modifier = drawBehind {
     val w = size.width
     val h = size.height
     val r = corner?.toPx() ?: (minOf(w, h) / 2)
     val hole = androidx.compose.ui.graphics.Path().apply {
         addRoundRect(androidx.compose.ui.geometry.RoundRect(0f, 0f, w, h, androidx.compose.ui.geometry.CornerRadius(r, r)))
     }
+    val sp = spread.toPx()
+    val steps = 12
+    val band = sp / steps
+    val brush = Brush.horizontalGradient(listOf(start, end))
     clipPath(hole, androidx.compose.ui.graphics.ClipOp.Difference) {
-    fun halo(color: Color, cx: Float) {
-        scale(1f, h / w * 1.25f, Offset(cx, h / 2)) {
-            drawCircle(Brush.radialGradient(listOf(color.copy(alpha = alpha), color.clear), Offset(cx, h / 2), w * 0.55f), w * 0.55f, Offset(cx, h / 2))
+        for (i in 0 until steps) {
+            val o = band * (i + 0.5f)
+            val f = 1f - i.toFloat() / steps
+            drawRoundRect(
+                brush,
+                topLeft = Offset(-o, -o),
+                size = Size(w + o * 2, h + o * 2),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(r + o, r + o),
+                alpha = alpha * 0.55f * f * f,
+                style = Stroke(band * 1.05f),
+            )
         }
-    }
-    halo(start, w * 0.3f)
-    halo(end, w * 0.7f)
     }
 }
 

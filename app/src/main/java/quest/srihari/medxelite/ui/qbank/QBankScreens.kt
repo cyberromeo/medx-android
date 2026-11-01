@@ -192,6 +192,8 @@ fun SubjectScreen(nav: Navigator, subjectId: String) {
                 Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                     Text("$practised of ${subject.moduleCount} modules practised", style = MaterialTheme.typography.titleMedium)
                     Text("${subject.chapters.size} chapters · ${"%,d".format(subject.questionCount)} questions", color = Mx.colors.secondaryText)
+                    Spacer(Modifier.height(10.dp))
+                    quest.srihari.medxelite.ui.components.GradientBar(practised.toFloat() / maxOf(subject.moduleCount, 1), Modifier.fillMaxWidth(), height = 5.dp)
                 }
             }
             items(subject.chapters, key = { it.id }) { chapter ->
