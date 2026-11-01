@@ -16,7 +16,7 @@ object Config {
     const val WEB_APP_ID = "1:300960747898:web:c8ad40db21d815a6a946c3"
 
     /**
-     * TODO(Sri): the OAuth **Web client ID** used for "Continue with Google".
+     * The OAuth **Web client ID** used for "Continue with Google".
      *
      * Firebase console ▸ Authentication ▸ Sign-in method ▸ Google ▸ "Web SDK configuration" ▸
      * Web client ID. It looks like `300960747898-xxxxxxxx.apps.googleusercontent.com`.
@@ -25,10 +25,10 @@ object Config {
      * (or a CI env var) — the BuildConfig value wins when it is set.
      * While it is empty the Google button explains what is missing and email sign-in still works.
      */
-    private const val GOOGLE_WEB_CLIENT_ID_FALLBACK = ""
+    private const val GOOGLE_WEB_CLIENT_ID_FALLBACK = "300960747898-elrmefpp8g47nvem3k632mf7c5btardh.apps.googleusercontent.com"
 
     /**
-     * TODO(Sri): the **Android** app registration, `1:300960747898:android:<hex>`.
+     * The **Android** app registration, `1:300960747898:android:<hex>`.
      *
      * Firebase console ▸ Project settings ▸ Your apps ▸ Add app ▸ Android, package
      * `quest.srihari.medxelite`, plus the debug SHA-1 from the README. Copy the "App ID".
@@ -39,7 +39,7 @@ object Config {
      * alone. When this is set, the Firebase Auth SDK is also signed in alongside (mirrors the
      * iOS MedxFirebaseBridge) so SDK-based features can be added later.
      */
-    private const val ANDROID_APP_ID_FALLBACK = ""
+    private const val ANDROID_APP_ID_FALLBACK = "1:300960747898:android:4da258fca8b1808ca946c3"
 
     val googleWebClientId: String
         get() = BuildConfig.GOOGLE_WEB_CLIENT_ID.ifBlank { GOOGLE_WEB_CLIENT_ID_FALLBACK }
