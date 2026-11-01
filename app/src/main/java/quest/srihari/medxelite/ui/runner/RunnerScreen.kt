@@ -427,7 +427,7 @@ fun OptionButton(
         Row(
             Modifier
                 .fillMaxWidth()
-                .then(if (lit) Modifier.softGlow(neon, if (state == 3) c.glowEnd else neon, if (c.isDark) 0.3f else 0.16f) else Modifier)
+                .then(if (lit) Modifier.softGlow(neon, if (state == 3) c.glowEnd else neon, if (c.isDark) 0.3f else 0.16f, 20.dp) else Modifier)
                 .glass(
                     shape,
                     fill = if (lit) neon.copy(alpha = if (c.isDark) 0.12f else 0.10f) else c.card,
@@ -494,7 +494,7 @@ fun Explanation(q: Question) {
 private fun HandoverOverlay(h: Handover, onBegin: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).clickable(enabled = false) {}, contentAlignment = Alignment.Center) {
         Column(
-            Modifier.padding(24.dp).widthIn(max = 420.dp).glass(RoundedCornerShape(28.dp), fill = Mx.colors.raised, glow = true).padding(24.dp),
+            Modifier.padding(24.dp).widthIn(max = 420.dp).glass(RoundedCornerShape(28.dp), fill = Mx.colors.raised, glow = true, glowCorner = 28.dp).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("${h.closedLabel} submitted", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)

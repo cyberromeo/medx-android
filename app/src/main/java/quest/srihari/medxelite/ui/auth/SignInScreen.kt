@@ -173,10 +173,10 @@ fun SignInScreen() {
         focusedTrailingIconColor = c.text, unfocusedTrailingIconColor = c.secondaryText,
     )
     Box(Modifier.fillMaxSize()) {
-        NeuralField(Modifier.fillMaxWidth().height(420.dp), nodes = 42, seed = 3)
+        NeuralField(Modifier.fillMaxWidth().height(440.dp), nodes = 44, seed = 3, hollow = androidx.compose.ui.geometry.Offset(0.5f, 0.62f), hollowRadius = 0.5f)
         Box(
             Modifier.fillMaxWidth().height(420.dp)
-                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent, c.base))),
+                .background(Brush.verticalGradient(listOf(c.base.copy(alpha = 0f), c.base.copy(alpha = 0f), c.base))),
         )
         Column(
             Modifier
@@ -207,7 +207,7 @@ fun SignInScreen() {
 
             Column(
                 Modifier.widthIn(max = 440.dp).fillMaxWidth()
-                    .glass(RoundedCornerShape(28.dp), glow = true)
+                    .glass(RoundedCornerShape(28.dp), glow = true, glowCorner = 28.dp)
                     .padding(18.dp),
             ) {
                 GlassButton(

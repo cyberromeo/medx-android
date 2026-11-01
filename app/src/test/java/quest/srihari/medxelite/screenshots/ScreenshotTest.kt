@@ -62,10 +62,15 @@ class ScreenshotTest {
         Medx.init(ApplicationProvider.getApplicationContext())
     }
 
-    private fun show(signedIn: Boolean = true, content: @Composable (Navigator) -> Unit) {
+    private fun show(
+        signedIn: Boolean = true,
+        appearance: MedxAppearance = MedxAppearance.DARK,
+        content: @Composable (Navigator) -> Unit,
+    ) {
         DemoData.install(signedIn)
         compose.setContent {
-            MedxTheme(MedxAccent.AURORA, MedxAppearance.DARK, reduceMotion = true) {
+            // Motion held still so every run renders the same frame.
+            MedxTheme(MedxAccent.AURORA, appearance, reduceMotion = true) {
                 content(Navigator(rememberNavController()))
             }
         }
@@ -139,5 +144,11 @@ class ScreenshotTest {
     @Test fun s08_settings() {
         show { SettingsScreen(it) }
         compose.onRoot().captureRoboImage(out("08-settings"))
+    }
+
+    /** Light appearance check (not one of the eight main shots). */
+    @Test fun s09_homeLight() {
+        show(appearance = MedxAppearance.LIGHT) { AppRoot() }
+        compose.onRoot().captureRoboImage(out("09-home-light"))
     }
 }

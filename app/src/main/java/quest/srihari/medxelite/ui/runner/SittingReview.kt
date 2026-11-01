@@ -189,7 +189,7 @@ fun SittingReview(
                             else -> Icons.Rounded.Close to Mx.colors.wrong
                         }
                         Box(
-                            Modifier.size(28.dp).softGlow(tint, tint, 0.3f).clip(CircleShape).background(tint.copy(alpha = 0.16f)).border(1.dp, tint.copy(alpha = 0.6f), CircleShape),
+                            Modifier.size(28.dp).softGlow(tint, tint, 0.3f, null).clip(CircleShape).background(tint.copy(alpha = 0.16f)).border(1.dp, tint.copy(alpha = 0.6f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
@@ -246,9 +246,9 @@ private fun ResultHero(
     }
     Box(
         Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()
-            .glass(RoundedCornerShape(30.dp), glow = true),
+            .glass(RoundedCornerShape(30.dp), glow = true, glowCorner = 30.dp),
     ) {
-        NeuralField(Modifier.matchParentSize(), nodes = 24, seed = 21, intensity = 0.55f)
+        NeuralField(Modifier.matchParentSize(), nodes = 26, seed = 21, intensity = 0.6f, hollow = androidx.compose.ui.geometry.Offset(0.5f, 0.5f), hollowRadius = 0.62f)
         Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconChip(subjectIcon(subject), Hues.forName(subject), 26.dp)

@@ -73,7 +73,7 @@ fun MedxLogoMark(size: Dp = 96.dp, modifier: Modifier = Modifier) {
     Box(
         modifier
             .size(size)
-            .softGlow(Color(0xFF7C5CFF), Color(0xFF22D3EE), 0.55f)
+            .softGlow(Color(0xFF7C5CFF), Color(0xFF22D3EE), 0.55f, size * 0.2237f)
             .clip(RoundedCornerShape(size * 0.2237f))
             .background(
                 Brush.linearGradient(
@@ -160,7 +160,7 @@ fun SectionHeader(text: String, icon: ImageVector? = null, modifier: Modifier = 
         }
         Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = c.secondaryText, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.width(10.dp))
-        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(c.glowStart.copy(alpha = 0.35f), Color.Transparent))))
+        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(c.glowStart.copy(alpha = 0.35f), c.glowStart.copy(alpha = 0f)))))
     }
 }
 
@@ -200,7 +200,7 @@ fun MedxRow(
                 }
             }
             if (trailing != null) {
-                Text(trailing, style = MaterialTheme.typography.bodyMedium.merge(quest.srihari.medxelite.ui.theme.StatStyle).copy(fontSize = 13.sp), color = Mx.colors.secondaryText, modifier = Modifier.padding(start = 8.dp))
+                Text(trailing, style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"), color = Mx.colors.secondaryText, modifier = Modifier.padding(start = 8.dp))
             }
             trailingContent?.invoke()
             if (showChevron && onClick != null) {

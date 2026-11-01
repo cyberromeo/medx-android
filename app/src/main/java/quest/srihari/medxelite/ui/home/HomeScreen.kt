@@ -171,7 +171,7 @@ fun HomeScreen(nav: Navigator, modifier: Modifier = Modifier, onTab: (Tab) -> Un
                             Card(onClick = { nav.play(resume.video) }) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
-                                        Modifier.size(48.dp).softGlow(Mx.colors.glowStart, Mx.colors.glowEnd, 0.5f).clip(CircleShape).background(Mx.colors.fillBrush),
+                                        Modifier.size(48.dp).softGlow(Mx.colors.glowStart, Mx.colors.glowEnd, 0.5f, null).clip(CircleShape).background(Mx.colors.fillBrush),
                                         contentAlignment = Alignment.Center,
                                     ) { Icon(Icons.Rounded.PlayArrow, null, tint = Color.White, modifier = Modifier.size(26.dp)) }
                                     Spacer(Modifier.width(14.dp))
@@ -232,13 +232,13 @@ private fun Countdown(name: String, date: LocalDate, onEdit: () -> Unit) {
         Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth()
-            .glass(RoundedCornerShape(28.dp), fill = c.card, glow = true, onClick = onEdit),
+            .glass(RoundedCornerShape(28.dp), fill = c.card, glow = true, glowCorner = 28.dp, onClick = onEdit),
     ) {
-        NeuralField(Modifier.matchParentSize(), nodes = 30, seed = 11, intensity = 0.8f)
+        NeuralField(Modifier.matchParentSize(), nodes = 30, seed = 11, intensity = 0.7f, hollow = Offset(0.74f, 0.5f), hollowRadius = 0.42f)
         // Aurora wash inside the hero.
         Box(
             Modifier.matchParentSize().background(
-                Brush.linearGradient(listOf(c.glowStart.copy(alpha = 0.22f), Color.Transparent, c.glowEnd.copy(alpha = 0.16f))),
+                Brush.linearGradient(listOf(c.glowStart.copy(alpha = 0.22f), c.glowStart.copy(alpha = 0f), c.glowEnd.copy(alpha = 0.16f))),
             ),
         )
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -374,7 +374,7 @@ private fun WeekCard(buckets: List<Int>, sittings: Int, accuracy: Int?) {
                             Modifier
                                 .fillMaxWidth()
                                 .height((76f * v / max).coerceAtLeast(5f).dp)
-                                .then(if (isToday && v > 0) Modifier.softGlow(c.glowStart, c.glowEnd, 0.45f) else Modifier)
+                                .then(if (isToday && v > 0) Modifier.softGlow(c.glowStart, c.glowEnd, 0.45f, 8.dp) else Modifier)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(
                                     if (v > 0) Brush.verticalGradient(listOf(c.glowEnd.copy(alpha = if (isToday) 1f else 0.6f), c.glowStart.copy(alpha = if (isToday) 1f else 0.5f)))
@@ -405,7 +405,7 @@ private fun AccuracyCard(points: List<Int>, overall: Int?) {
             val area = androidx.compose.ui.graphics.Path().apply {
                 addPath(line); lineTo(pts.last().x, size.height); lineTo(pts.first().x, size.height); close()
             }
-            drawPath(area, Brush.verticalGradient(listOf(c.glowStart.copy(alpha = 0.35f), Color.Transparent)))
+            drawPath(area, Brush.verticalGradient(listOf(c.glowStart.copy(alpha = 0.35f), c.glowStart.copy(alpha = 0f))))
             val brush = Brush.horizontalGradient(listOf(c.glowStart, c.glowMid, c.glowEnd))
             drawPath(line, brush, alpha = 0.3f, style = Stroke(8.dp.toPx(), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
             drawPath(line, brush, style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))

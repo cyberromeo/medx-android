@@ -84,6 +84,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
@@ -107,6 +108,9 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
 import kotlin.random.Random
+
+/** Fully transparent version of the same hue, so gradients never dip through grey/black. */
+private val Color.clear: Color get() = copy(alpha = 0f)
 
 // ================================================================ Time
 
@@ -150,26 +154,27 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
                         y += step
                     }
                 }
-                val gridFade = Brush.verticalGradient(
-                    0f to Color.Transparent, 0.4f to Color.Transparent, 1f to c.base,
-                    startY = 0f, endY = size.height * 0.42f,
-                )
+                val rows = pts.groupBy { it.y }.toList()
+                val dotColor = if (dark) Color.White else Color(0xFF3B2F8F)
+                val dotMax = if (dark) 0.07f else 0.08f
                 val w = size.width
                 val h = size.height
                 onDrawBehind {
                     drawRect(c.base)
                     val t = time.value
                     fun blob(color: Color, cx: Float, cy: Float, r: Float, a: Float) {
-                        drawCircle(Brush.radialGradient(listOf(color.copy(alpha = a), Color.Transparent), Offset(cx, cy), r), r, Offset(cx, cy))
+                        drawCircle(Brush.radialGradient(listOf(color.copy(alpha = a), color.clear), Offset(cx, cy), r), r, Offset(cx, cy))
                     }
                     val k = if (dark) 1f else 0.55f
                     blob(Aurora.violet, w * (0.12f + 0.08f * sin(t * 0.21f)), h * (0.04f + 0.03f * cos(t * 0.17f)), w * 0.95f, 0.38f * k)
                     blob(Aurora.cyan, w * (0.98f + 0.06f * cos(t * 0.19f)), h * (0.13f + 0.03f * sin(t * 0.23f)), w * 0.8f, 0.24f * k)
                     blob(Aurora.magenta, w * (0.55f + 0.12f * sin(t * 0.13f)), h * (-0.04f + 0.02f * sin(t * 0.29f)), w * 0.6f, 0.20f * k)
-                    drawPoints(pts, PointMode.Points, (if (dark) Color.White else Color(0xFF3B2F8F)).copy(alpha = if (dark) 0.07f else 0.08f), strokeWidth = 1.6.dp.toPx(), cap = StrokeCap.Round)
-                    drawRect(gridFade, size = Size(w, h * 0.42f))
+                    rows.forEach { (y, row) ->
+                        val f = (1f - y / (h * 0.42f)).coerceIn(0f, 1f)
+                        drawPoints(row, PointMode.Points, dotColor.copy(alpha = dotMax * f), strokeWidth = 1.6.dp.toPx(), cap = StrokeCap.Round)
+                    }
                     // Soft vignette at the bottom keeps lower content calm.
-                    drawRect(Brush.verticalGradient(listOf(Color.Transparent, c.base.copy(alpha = 0.6f)), startY = h * 0.6f, endY = h), topLeft = Offset(0f, h * 0.6f))
+                    drawRect(Brush.verticalGradient(listOf(c.base.copy(alpha = 0f), c.base.copy(alpha = 0.6f)), startY = h * 0.6f, endY = h), topLeft = Offset(0f, h * 0.6f))
                 }
             },
     )
@@ -179,7 +184,16 @@ private class Node(val x: Float, val y: Float, val ax: Float, val ay: Float, val
 
 /** A drifting "neural" constellation: nodes, links between near neighbours and pulsing hubs. */
 @Composable
-fun NeuralField(modifier: Modifier = Modifier, nodes: Int = 34, seed: Int = 7, intensity: Float = 1f) {
+fun NeuralField(
+    modifier: Modifier = Modifier,
+    nodes: Int = 34,
+    seed: Int = 7,
+    intensity: Float = 1f,
+    /** Fractional centre of a region kept clear (text sits there); null keeps the whole field. */
+    hollow: Offset? = null,
+    /** Radius of the clear region as a fraction of the width. */
+    hollowRadius: Float = 0.4f,
+) {
     val time = rememberMotionClock()
     val c = Mx.colors
     val field = remember(nodes, seed) {
@@ -200,24 +214,33 @@ fun NeuralField(modifier: Modifier = Modifier, nodes: Int = 34, seed: Int = 7, i
         val h = size.height
         val pos = field.map { n -> Offset((n.x + n.ax * sin(t * n.fx + n.ph)) * w, (n.y + n.ay * cos(t * n.fy + n.ph)) * h) }
         val reach = 92.dp.toPx()
+        val hc = hollow?.let { Offset(it.x * w, it.y * h) }
+        val hr = hollowRadius * w
+        fun keep(p: Offset): Float {
+            if (hc == null) return 1f
+            val d = hypot(p.x - hc.x, p.y - hc.y) / hr
+            return ((d - 0.55f) / 0.45f).coerceIn(0f, 1f)
+        }
         val line = 1.dp.toPx()
         for (i in pos.indices) for (j in i + 1 until pos.size) {
             val d = hypot(pos[i].x - pos[j].x, pos[i].y - pos[j].y)
             if (d < reach) {
-                val a = (1f - d / reach) * lineA * intensity
+                val a = (1f - d / reach) * lineA * intensity * minOf(keep(pos[i]), keep(pos[j]))
                 val col = lerp(c.glowStart, c.glowEnd, ((pos[i].x + pos[j].x) / 2f / w).coerceIn(0f, 1f))
                 drawLine(col.copy(alpha = a), pos[i], pos[j], line)
             }
         }
         field.forEachIndexed { i, n ->
             val p = pos[i]
+            val k = keep(p)
+            if (k <= 0f) return@forEachIndexed
             val pulse = 0.5f + 0.5f * sin(t * 1.6f + n.ph)
             val col = lerp(c.glowStart, c.glowEnd, (p.x / w).coerceIn(0f, 1f))
             if (n.hub) {
                 val rr = (7f + 5f * pulse).dp.toPx()
-                drawCircle(Brush.radialGradient(listOf(col.copy(alpha = 0.55f * intensity), Color.Transparent), p, rr), rr, p)
+                drawCircle(Brush.radialGradient(listOf(col.copy(alpha = 0.55f * intensity * k), col.clear), p, rr), rr, p)
             }
-            drawCircle(Color.White.copy(alpha = (0.55f + 0.4f * pulse) * intensity), n.r.dp.toPx() * (if (n.hub) 1.5f else 1f), p)
+            drawCircle(Color.White.copy(alpha = (0.55f + 0.4f * pulse) * intensity * k), n.r.dp.toPx() * (if (n.hub) 1.5f else 1f), p)
         }
     }
 }
@@ -225,16 +248,22 @@ fun NeuralField(modifier: Modifier = Modifier, nodes: Int = 34, seed: Int = 7, i
 // ================================================================ Glass
 
 /** Soft coloured halo behind a surface; draws outside the bounds, so place it before clip. */
-fun Modifier.softGlow(start: Color, end: Color = start, alpha: Float = 0.35f): Modifier = drawBehind {
+fun Modifier.softGlow(start: Color, end: Color = start, alpha: Float = 0.35f, corner: Dp? = 24.dp): Modifier = drawBehind {
     val w = size.width
     val h = size.height
+    val r = corner?.toPx() ?: (minOf(w, h) / 2)
+    val hole = androidx.compose.ui.graphics.Path().apply {
+        addRoundRect(androidx.compose.ui.geometry.RoundRect(0f, 0f, w, h, androidx.compose.ui.geometry.CornerRadius(r, r)))
+    }
+    clipPath(hole, androidx.compose.ui.graphics.ClipOp.Difference) {
     fun halo(color: Color, cx: Float) {
         scale(1f, h / w * 1.25f, Offset(cx, h / 2)) {
-            drawCircle(Brush.radialGradient(listOf(color.copy(alpha = alpha), Color.Transparent), Offset(cx, h / 2), w * 0.55f), w * 0.55f, Offset(cx, h / 2))
+            drawCircle(Brush.radialGradient(listOf(color.copy(alpha = alpha), color.clear), Offset(cx, h / 2), w * 0.55f), w * 0.55f, Offset(cx, h / 2))
         }
     }
     halo(start, w * 0.3f)
     halo(end, w * 0.7f)
+    }
 }
 
 /**
@@ -246,6 +275,7 @@ fun Modifier.glass(
     shape: Shape = RoundedCornerShape(24.dp),
     fill: Color = Mx.colors.card,
     glow: Boolean = false,
+    glowCorner: Dp? = 24.dp,
     hairline: Boolean = true,
     pressScale: Boolean = true,
     enabled: Boolean = true,
@@ -265,9 +295,9 @@ fun Modifier.glass(
             }
         }
     }
-    val sheen = Brush.verticalGradient(listOf(Color.White.copy(alpha = if (c.isDark) 0.06f else 0.35f), Color.Transparent))
+    val sheen = Brush.verticalGradient(listOf(Color.White.copy(alpha = if (c.isDark) 0.06f else 0.35f), Color.White.clear))
     var m = this
-    if (glow) m = m.softGlow(c.glowStart, c.glowEnd, if (c.isDark) 0.28f else 0.18f)
+    if (glow) m = m.softGlow(c.glowStart, c.glowEnd, if (c.isDark) 0.28f else 0.18f, glowCorner)
     m = m.graphicsLayer { scaleX = scale; scaleY = scale }
         .clip(shape)
         .background(fill)
@@ -292,7 +322,7 @@ fun Modifier.holoSweep(progress: () -> Float): Modifier = drawWithContent {
     rotate(18f) {
         drawRect(
             Brush.horizontalGradient(
-                listOf(Color.Transparent, Aurora.cyan.copy(alpha = 0.16f * fade), Color.White.copy(alpha = 0.22f * fade), Aurora.magenta.copy(alpha = 0.14f * fade), Color.Transparent),
+                listOf(Aurora.cyan.clear, Aurora.cyan.copy(alpha = 0.16f * fade), Color.White.copy(alpha = 0.22f * fade), Aurora.magenta.copy(alpha = 0.14f * fade), Aurora.magenta.clear),
                 startX = x, endX = x + band,
             ),
             topLeft = Offset(-w, -size.height), size = Size(w * 3, size.height * 3),
@@ -339,11 +369,11 @@ fun GradientButton(
     Box(
         modifier
             .heightIn(min = height)
-            .then(if (enabled) Modifier.softGlow(glowA, glowB, if (c.isDark) 0.42f else 0.25f) else Modifier)
+            .then(if (enabled) Modifier.softGlow(glowA, glowB, if (c.isDark) 0.42f else 0.25f, null) else Modifier)
             .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
             .clip(shape)
             .background(Brush.horizontalGradient(listOf(start, end)))
-            .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.22f), Color.Transparent, Color.Black.copy(alpha = 0.08f))))
+            .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.22f), Color.White.clear, Color.Black.copy(alpha = 0.08f))))
             .border(1.dp, Brush.horizontalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.08f))), shape)
             .pressFx(enabled = enabled, onClick = onClick)
             .padding(contentPadding),
@@ -380,7 +410,7 @@ fun GlassButton(
             .graphicsLayer { alpha = if (enabled) 1f else 0.5f }
             .clip(shape)
             .background(c.card)
-            .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = if (c.isDark) 0.07f else 0.4f), Color.Transparent)))
+            .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = if (c.isDark) 0.07f else 0.4f), Color.White.clear)))
             .border(1.dp, c.hairline, shape)
             .pressFx(enabled = enabled, onClick = onClick)
             .padding(horizontal = 20.dp),
@@ -471,14 +501,14 @@ fun GlowRing(
             if (progress > 0.01f) {
                 val a = (sweepAngle - 90f) * PI.toFloat() / 180f
                 val p = Offset(center.x + cos(a) * radius, center.y + sin(a) * radius)
-                drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.9f), head.copy(alpha = 0.5f), Color.Transparent), p, sw * 1.6f), sw * 1.6f, p)
+                drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.9f), head.copy(alpha = 0.5f), head.clear), p, sw * 1.6f), sw * 1.6f, p)
                 drawCircle(Color.White, sw * 0.32f, p)
             }
             if (orbit) {
                 val ro = radius + sw / 2 + 5.dp.toPx()
                 val a = time.value * 0.9f
                 val p = Offset(center.x + cos(a) * ro, center.y + sin(a) * ro)
-                drawCircle(Brush.radialGradient(listOf(Aurora.cyan.copy(alpha = 0.8f), Color.Transparent), p, 7.dp.toPx()), 7.dp.toPx(), p)
+                drawCircle(Brush.radialGradient(listOf(Aurora.cyan.copy(alpha = 0.8f), Aurora.cyan.clear), p, 7.dp.toPx()), 7.dp.toPx(), p)
                 drawCircle(Color.White, 2.2.dp.toPx(), p)
                 // Faint orbit path.
                 drawCircle(Color.White.copy(alpha = 0.06f), ro, center, style = Stroke(1.dp.toPx()))
@@ -503,7 +533,7 @@ fun AiCoreOrb(progress: Float, met: Boolean, modifier: Modifier = Modifier, cont
             val r = size.minDimension / 2 * 0.62f
             // Halo breathes.
             val halo = r * (1.35f + 0.12f * pulse)
-            drawCircle(Brush.radialGradient(listOf(a.copy(alpha = 0.45f), b.copy(alpha = 0.12f), Color.Transparent), center, halo), halo, center)
+            drawCircle(Brush.radialGradient(listOf(a.copy(alpha = 0.45f), b.copy(alpha = 0.12f), b.clear), center, halo), halo, center)
             // Core.
             drawCircle(
                 Brush.radialGradient(
@@ -518,7 +548,7 @@ fun AiCoreOrb(progress: Float, met: Boolean, modifier: Modifier = Modifier, cont
                 drawArc(Color.White.copy(alpha = 0.2f), 200f, 110f, false, Offset(center.x - r * 0.5f, center.y - r * 0.5f), Size(r * 1.0f, r * 1.0f), style = Stroke(1.2.dp.toPx(), cap = StrokeCap.Round))
             }
             // Darken the middle so the figure on top stays readable.
-            drawCircle(Brush.radialGradient(listOf(Color(0xFF0B0820).copy(alpha = 0.55f), Color.Transparent), center, r * 0.85f), r * 0.85f, center)
+            drawCircle(Brush.radialGradient(listOf(Color(0xFF0B0820).copy(alpha = 0.55f), Color(0xFF0B0820).clear), center, r * 0.85f), r * 0.85f, center)
         }
         GlowRing(progress, Modifier.fillMaxSize(), stroke = 6.dp, colors = listOf(a, b, Color.White, a), track = Color.White.copy(alpha = if (c.isDark) 0.08f else 0.4f))
         content()
@@ -603,7 +633,7 @@ fun GlassSegmented(
                     .height(38.dp)
                     .clip(RoundedCornerShape(50))
                     .then(if (on) Modifier.background(c.fillBrush) else Modifier)
-                    .then(if (on) Modifier.background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.2f), Color.Transparent))) else Modifier)
+                    .then(if (on) Modifier.background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.2f), Color.White.clear))) else Modifier)
                     .clickable(enabled = enabled(i)) { onSelect(i) },
                 contentAlignment = Alignment.Center,
             ) {
@@ -640,10 +670,10 @@ fun GlassBottomBar(items: List<NavItem>, selected: Int, onSelect: (Int) -> Unit)
         Row(
             Modifier
                 .fillMaxWidth()
-                .softGlow(c.glowStart, c.glowEnd, if (c.isDark) 0.14f else 0.08f)
+                .softGlow(c.glowStart, c.glowEnd, if (c.isDark) 0.14f else 0.08f, 30.dp)
                 .clip(shape)
                 .background(if (c.isDark) c.raised.copy(alpha = 0.88f) else Color.White.copy(alpha = 0.9f))
-                .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = if (c.isDark) 0.06f else 0.3f), Color.Transparent)))
+                .background(Brush.verticalGradient(listOf(Color.White.copy(alpha = if (c.isDark) 0.06f else 0.3f), Color.White.clear)))
                 .border(1.dp, c.hairline, shape)
                 .padding(horizontal = 6.dp, vertical = 6.dp),
         ) {
@@ -664,7 +694,7 @@ fun GlassBottomBar(items: List<NavItem>, selected: Int, onSelect: (Int) -> Unit)
                             .drawBehind {
                                 if (glowAlpha > 0f) {
                                     val r = size.width * 0.75f
-                                    drawCircle(Brush.radialGradient(listOf(c.glowStart.copy(alpha = 0.45f * glowAlpha), Color.Transparent), center, r), r, center)
+                                    drawCircle(Brush.radialGradient(listOf(c.glowStart.copy(alpha = 0.45f * glowAlpha), c.glowStart.clear), center, r), r, center)
                                 }
                             }
                             .clip(RoundedCornerShape(50))
@@ -727,7 +757,7 @@ fun GlowChip(selected: Boolean, onClick: () -> Unit, label: String, icon: ImageV
     val shape = RoundedCornerShape(50)
     Row(
         Modifier
-            .then(if (selected) Modifier.softGlow(c.glowStart, c.glowEnd, 0.25f) else Modifier)
+            .then(if (selected) Modifier.softGlow(c.glowStart, c.glowEnd, 0.25f, null) else Modifier)
             .clip(shape)
             .then(if (selected) Modifier.background(c.fillBrush) else Modifier.background(c.card))
             .border(1.dp, if (selected) Brush.linearGradient(listOf(Color.White.copy(alpha = 0.4f), Color.White.copy(alpha = 0.1f))) else c.hairline, shape)
@@ -756,7 +786,7 @@ fun GradientBar(progress: Float, modifier: Modifier = Modifier, height: Dp = 6.d
         if (w > 0f) {
             drawRoundRect(Brush.horizontalGradient(stops, 0f, size.width), size = Size(maxOf(w, h), h), cornerRadius = r)
             val p = Offset(maxOf(w, h) - h / 2, h / 2)
-            drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.8f), stops.last().copy(alpha = 0.3f), Color.Transparent), p, h * 1.8f), h * 1.8f, p)
+            drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.8f), stops.last().copy(alpha = 0.3f), stops.last().clear), p, h * 1.8f), h * 1.8f, p)
         }
     }
 }

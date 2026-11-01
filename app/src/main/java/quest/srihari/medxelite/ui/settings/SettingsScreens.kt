@@ -118,7 +118,7 @@ fun SettingsScreen(nav: Navigator) {
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
                 Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), glow = true).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().glass(RoundedCornerShape(28.dp), glow = true, glowCorner = 28.dp).padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                         Avatar(session, 60.dp)
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
@@ -140,7 +140,7 @@ fun SettingsScreen(nav: Navigator) {
                             val end = if (a == MedxAccent.TEAL || a == MedxAccent.GREEN) Aurora.violet else Aurora.cyan
                             Box(
                                 Modifier.size(40.dp)
-                                    .then(if (on) Modifier.softGlow(Color(a.hex), end, 0.55f) else Modifier)
+                                    .then(if (on) Modifier.softGlow(Color(a.hex), end, 0.55f, null) else Modifier)
                                     .clip(CircleShape).background(Brush.linearGradient(listOf(Color(a.hex), end)))
                                     .border(if (on) 2.5.dp else 1.dp, if (on) Color.White else Color.White.copy(alpha = 0.25f), CircleShape)
                                     .clickable { Medx.prefs.setAccent(a) },

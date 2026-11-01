@@ -1,5 +1,12 @@
 package quest.srihari.medxelite.ui.videos
 
+import quest.srihari.medxelite.ui.components.glass
+import quest.srihari.medxelite.ui.theme.Aurora
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.net.Uri
@@ -171,16 +178,29 @@ fun PlayerScreen(nav: Navigator, video: RecordedVideo?) {
             },
             modifier = Modifier.fillMaxSize(),
         )
-        Column(Modifier.statusBarsPadding().padding(4.dp)) {
+        Column(
+            Modifier.fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color(0xCC070A14), Color(0x00070A14))))
+                .statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp),
+        ) {
             androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { nav.back() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color.White) }
-                Text(video.displayTitle, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1, modifier = Modifier.weight(1f))
-                IconButton(onClick = {
-                    activity?.requestedOrientation =
-                        if (activity?.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                        else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                }) { Icon(Icons.Rounded.ScreenRotation, "Rotate", tint = Color.White) }
+                Box(Modifier.size(40.dp).glass(CircleShape, fill = Color.White.copy(alpha = 0.12f), onClick = { nav.back() }), contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text(video.displayTitle, color = Color.White, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                    Text(video.subject, color = Color.White.copy(alpha = 0.7f), style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                }
+                Box(
+                    Modifier.size(40.dp).glass(CircleShape, fill = Color.White.copy(alpha = 0.12f), onClick = {
+                        activity?.requestedOrientation =
+                            if (activity?.requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                            else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    }),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Rounded.ScreenRotation, "Rotate", tint = Color.White, modifier = Modifier.size(20.dp)) }
             }
+            Box(Modifier.padding(top = 8.dp).fillMaxWidth().height(1.dp).background(Brush.horizontalGradient(listOf(Aurora.violet, Aurora.cyan, Aurora.cyan.copy(alpha = 0f)))))
         }
         error?.let {
             Text(it, color = Color.White, modifier = Modifier.align(Alignment.Center).padding(32.dp))
