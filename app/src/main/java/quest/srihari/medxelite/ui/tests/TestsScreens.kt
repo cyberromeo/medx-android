@@ -112,9 +112,9 @@ fun TestsScreen(nav: Navigator, modifier: Modifier = Modifier) {
                                 WidgetHeader("Marrow FMGE test series")
                                 Spacer(Modifier.height(14.dp))
                                 Row(Modifier.fillMaxWidth()) {
-                                    DotStat("${s.value.size}", "papers", Modifier.weight(1f), size = 30.sp)
-                                    DotStat(compactCount(s.value.sumOf { it.questions }), "questions", Modifier.weight(1.2f), size = 30.sp)
-                                    DotStat("$done", "attempted", Modifier.weight(1f), size = 30.sp, color = if (done > 0) Mx.colors.accent else Mx.colors.ink)
+                                    DotStat("${s.value.size}", "papers", Modifier.weight(1f))
+                                    DotStat(compactCount(s.value.sumOf { it.questions }), "questions", Modifier.weight(1.2f))
+                                    DotStat("$done", "attempted", Modifier.weight(1f), color = if (done > 0) Mx.colors.accent else Mx.colors.ink)
                                 }
                             }
                         }

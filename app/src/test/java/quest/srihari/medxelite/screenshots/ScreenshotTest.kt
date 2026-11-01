@@ -2,7 +2,9 @@ package quest.srihari.medxelite.screenshots
 
 import android.app.Application
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
@@ -119,6 +121,13 @@ class ScreenshotTest {
     @Test fun s02_home() {
         show { AppRoot() }
         compose.onRoot().captureRoboImage(out("02-home"))
+    }
+
+    @Test fun s02b_homeScrolled() {
+        show { AppRoot() }
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(6)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage(out("02b-home-scrolled"))
     }
 
     @Test fun s03_homeLight() {

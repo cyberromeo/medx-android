@@ -9,6 +9,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import quest.srihari.medxelite.ui.components.DotDivider
 import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.DotValue
 import quest.srihari.medxelite.ui.components.NCircleButton
 import quest.srihari.medxelite.ui.components.NLabel
 import quest.srihari.medxelite.ui.components.NPill
@@ -178,10 +179,8 @@ fun RunnerScreen(nav: Navigator, payload: RunnerPayload?) {
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         if (ready) {
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                DotText("%02d".format(state.currentIndex + 1), size = 30.sp)
-                                DotText(" / ${state.questions.size}", size = 18.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(bottom = 3.dp))
-                            }
+                            DotValue("%02d".format(state.currentIndex + 1), "/ ${state.questions.size}", size = 34.sp)
+                            Spacer(Modifier.height(4.dp))
                         } else {
                             Text(payload.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
@@ -350,14 +349,14 @@ private fun Clock(state: RunnerState) {
 private fun TimeBar(state: RunnerState) {
     val fraction = state.displaySeconds.toFloat() / maxOf(state.capacitySeconds, 1)
     val color = when (state.phase) {
-        ClockPhase.CALM -> Mx.colors.ink.copy(alpha = 0.55f)
+        ClockPhase.CALM -> Mx.colors.ink.copy(alpha = 0.28f)
         ClockPhase.LOW -> Mx.colors.accent
         ClockPhase.CRITICAL -> Mx.colors.wrong
     }
     LinearProgressIndicator(
         progress = { fraction.coerceIn(0f, 1f) }, color = color, trackColor = Mx.colors.hairline,
         drawStopIndicator = {}, gapSize = 0.dp,
-        modifier = Modifier.fillMaxWidth().height(2.dp),
+        modifier = Modifier.fillMaxWidth().height(1.5.dp),
     )
 }
 
@@ -558,10 +557,7 @@ private fun NavigatorSheet(state: RunnerState, isMarked: (Question) -> Boolean, 
         Column(Modifier.padding(horizontal = 16.dp).navigationBarsPadding().padding(bottom = 16.dp)) {
             WidgetHeader(if (state.isSectioned) state.activeSection.label else "Questions")
             Spacer(Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                DotText("${state.sectionAnswered}", size = 36.sp)
-                NLabel(" / ${state.questionsInSection.size} answered", Modifier.padding(bottom = 6.dp, start = 6.dp))
-            }
+            DotValue("${state.sectionAnswered}", "/ ${state.questionsInSection.size} answered", size = 44.sp)
             Spacer(Modifier.height(12.dp))
             val s = state.activeSection
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {

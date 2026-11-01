@@ -10,6 +10,7 @@ import androidx.compose.ui.text.TextStyle
 import quest.srihari.medxelite.ui.components.DotDivider
 import quest.srihari.medxelite.ui.components.DotStat
 import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.DotValue
 import quest.srihari.medxelite.ui.components.NChip
 import quest.srihari.medxelite.ui.components.NLabel
 import quest.srihari.medxelite.ui.components.NPill
@@ -131,16 +132,16 @@ fun SittingReview(
             item {
                 NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
                     WidgetHeader(if (gradable) "Score" else "Answered", trailing = { NChip(subject.ifBlank { "Sitting" }) })
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(18.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
                         if (gradable) {
-                            DotText("$pct", size = 112.sp)
-                            DotText("%", size = 48.sp, color = Mx.colors.accent, modifier = Modifier.padding(start = 4.dp, bottom = 14.dp))
+                            DotText("$pct", size = 120.sp)
+                            DotText("%", size = 120.sp, color = Mx.colors.accent)
                         } else {
-                            DotText("$attempted", size = 112.sp)
-                            DotText("/$total", size = 40.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(start = 4.dp, bottom = 14.dp))
+                            DotValue("$attempted", "/ $total", size = 120.sp)
                         }
                     }
+                    Spacer(Modifier.height(18.dp))
                     Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     Spacer(Modifier.height(2.dp))
                     Text(
@@ -153,9 +154,9 @@ fun SittingReview(
                     DotDivider()
                     Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth()) {
-                        DotStat("$attempted", "attempted", Modifier.weight(1f), size = 26.sp)
-                        if (gradable) DotStat(if (attempted > 0) "${Math.round(score * 100.0 / attempted)}%" else "--", "accuracy", Modifier.weight(1f), size = 26.sp)
-                        DotStat(formatDuration(elapsedSeconds), "time", Modifier.weight(1f), size = 26.sp)
+                        DotStat("$attempted", "attempted", Modifier.weight(1f), size = 34.sp)
+                        if (gradable) DotStat(if (attempted > 0) "${Math.round(score * 100.0 / attempted)}%" else "--", "accuracy", Modifier.weight(1f), size = 34.sp)
+                        DotStat(formatDuration(elapsedSeconds), "time", Modifier.weight(1f), size = 34.sp)
                     }
                 }
             }
@@ -168,7 +169,7 @@ fun SittingReview(
                                     Text(b.label, fontWeight = FontWeight.SemiBold)
                                     Text("${b.attempted} attempted · ${formatDuration(b.seconds)}", style = MaterialTheme.typography.bodySmall, color = Mx.colors.secondaryText)
                                 }
-                                DotText("${b.score}/${b.total}", size = 20.sp)
+                                DotValue("${b.score}", "/${b.total}", size = 28.sp)
                             }
                         }
                     }

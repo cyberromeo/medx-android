@@ -139,12 +139,8 @@ fun FaceoffScreen(nav: Navigator) {
                 NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
                     WidgetHeader("1 v 1 · live")
                     Spacer(Modifier.height(10.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        DotText("60", size = 64.sp)
-                        DotText("s", size = 28.sp, color = Mx.colors.accent, modifier = Modifier.padding(start = 2.dp, bottom = 8.dp))
-                        Spacer(Modifier.width(12.dp))
-                        NLabel("per question", Modifier.padding(bottom = 14.dp))
-                    }
+                    Spacer(Modifier.height(8.dp))
+                    quest.srihari.medxelite.ui.components.DotValue("60", "sec / question", size = 72.sp)
                     Spacer(Modifier.height(6.dp))
                     Text("Duel any MedX friend", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(2.dp))
@@ -155,8 +151,9 @@ fun FaceoffScreen(nav: Navigator) {
                 }
             }
             item {
-                GroupedSection("Join a room", error) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    NLabel("Join a room", Modifier.padding(start = 6.dp, bottom = 8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             code, { code = it.uppercase().filter { ch -> ch.isLetterOrDigit() }.take(8) },
                             placeholder = { Text("CODE", style = MaterialTheme.typography.titleMedium.copy(fontFamily = NType.mono, letterSpacing = 4.sp)) }, singleLine = true,
@@ -169,14 +166,15 @@ fun FaceoffScreen(nav: Navigator) {
                         Spacer(Modifier.width(10.dp))
                         NPill(if (busy == "join") "Joining…" else "Join", ::join, enabled = busy == null, modifier = Modifier.height(56.dp))
                     }
+                    error?.let {
+                        Text(it, color = Mx.colors.wrong, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 6.dp, top = 8.dp))
+                    }
                 }
             }
             item {
-                GroupedSection("Create a room — length") {
-                    NSegmented(
-                        DuelRules.LENGTHS, length, { l -> if (l == 0) "All" else "$l q" }, { length = it },
-                        Modifier.padding(10.dp),
-                    )
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    NLabel("Create a room · length", Modifier.padding(start = 6.dp, bottom = 8.dp))
+                    NSegmented(DuelRules.LENGTHS, length, { l -> if (l == 0) "All" else "$l q" }, { length = it })
                 }
             }
             when (val s = series) {

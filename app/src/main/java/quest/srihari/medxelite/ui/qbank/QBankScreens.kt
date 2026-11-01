@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.sp
 import quest.srihari.medxelite.ui.components.DotProgress
 import quest.srihari.medxelite.ui.components.DotStat
 import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.DotValue
 import quest.srihari.medxelite.ui.components.NChip
 import quest.srihari.medxelite.ui.components.NLabel
 import quest.srihari.medxelite.ui.components.NSegmented
@@ -144,9 +145,9 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
                                 WidgetHeader(bank.eyebrow)
                                 Spacer(Modifier.height(14.dp))
                                 Row(Modifier.fillMaxWidth()) {
-                                    DotStat("${subjects.size}", "subjects", Modifier.weight(0.8f), size = 30.sp)
-                                    DotStat("$m", "modules", Modifier.weight(1f), size = 30.sp)
-                                    DotStat(compactCount(q), "questions", Modifier.weight(1.1f), size = 30.sp)
+                                    DotStat("${subjects.size}", "subjects", Modifier.weight(0.8f))
+                                    DotStat("$m", "modules", Modifier.weight(1f))
+                                    DotStat(compactCount(q), "questions", Modifier.weight(1.1f))
                                 }
                             }
                         }
@@ -179,7 +180,7 @@ fun QBankScreen(nav: Navigator, modifier: Modifier = Modifier) {
 fun compactCount(n: Int): String = when {
     n >= 100_000 -> "${n / 1000}K"
     n >= 10_000 -> "%.1fK".format(n / 1000.0)
-    else -> "%,d".format(n)
+    else -> n.toString()
 }
 
 /** Two-letter subject monogram on a raised disc. */
@@ -222,8 +223,7 @@ fun SubjectScreen(nav: Navigator, subjectId: String) {
                     WidgetHeader("Progress", trailing = { NLabel("${subject.chapters.size} chapters") })
                     Spacer(Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
-                        DotText("$practised", size = 56.sp)
-                        DotText("/${subject.moduleCount}", size = 26.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
+                        DotValue("$practised", "/ ${subject.moduleCount}", size = 56.sp)
                         Spacer(Modifier.width(12.dp))
                         NLabel("modules practised", Modifier.padding(bottom = 10.dp).weight(1f), maxLines = 2)
                     }
@@ -243,7 +243,7 @@ fun SubjectScreen(nav: Navigator, subjectId: String) {
                             subtitle = "${m.questionCount} questions" + if (sittings.isNotEmpty()) " · ${sittings.size} sitting${if (sittings.size == 1) "" else "s"}" else "",
                             divider = i < chapter.modules.size - 1,
                             trailingContent = {
-                                if (best != null) NChip("$best%", inverted = true)
+                                if (best != null) NChip("$best%")
                             },
                         ) { pick = m }
                     }
@@ -286,8 +286,7 @@ fun StartSessionSheet(
             Text(title, style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.Bottom) {
-                DotText("$questionCount", size = 40.sp)
-                NLabel("questions", Modifier.padding(start = 8.dp, bottom = 7.dp))
+                DotValue("$questionCount", "questions", size = 44.sp)
             }
             Spacer(Modifier.height(18.dp))
             ModeCard(SittingMode.EXAM, examBlurb ?: SittingMode.EXAM.description, Icons.Outlined.Timer, filled = true) { onStart(SittingMode.EXAM) }

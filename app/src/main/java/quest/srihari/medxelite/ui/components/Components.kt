@@ -90,8 +90,8 @@ fun MedxLogoMark(size: Dp = 96.dp, modifier: Modifier = Modifier, framed: Boolea
             val w = this.size.width - inset * 2
             val pts = points.map { (x, y) -> Offset(inset + x / 100f * w, inset + y / 100f * w) }
             // Walk the polyline and drop a dot every `gap` px.
-            val gap = this.size.width * 0.075f
-            val r = this.size.width * 0.03f
+            val gap = this.size.width * (if (framed) 0.058f else 0.075f)
+            val r = this.size.width * (if (framed) 0.024f else 0.03f)
             val dots = mutableListOf<Offset>()
             var carry = 0f
             for (i in 0 until pts.size - 1) {

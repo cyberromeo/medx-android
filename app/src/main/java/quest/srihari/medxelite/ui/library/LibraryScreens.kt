@@ -111,7 +111,7 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
         Feature("Batch papers", "ARISE tests", Icons.Outlined.Description, Hues.teal, "batch"),
         Feature("VOD feed", "Newest recordings", Icons.Outlined.VideoLibrary, Hues.pink, "vod"),
         Feature("Faceoff", "Duel a friend", Icons.Outlined.Bolt, Hues.yellow, "faceoff"),
-        Feature("Watch history", "${history.size} classes", Icons.Outlined.History, Hues.green, "history", history.size),
+        Feature("Watch history", "${history.size} class${if (history.size == 1) "" else "es"}", Icons.Outlined.History, Hues.green, "history", history.size),
         Feature("Activity log", "${attempts.size} sittings", Icons.Outlined.ListAlt, Hues.gray, "activity", attempts.size),
     )
     Scaffold(
@@ -132,7 +132,7 @@ fun LibraryScreen(nav: Navigator, modifier: Modifier = Modifier) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconTile(f.icon, if (f.route == "faceoff") Mx.colors.accent else Mx.colors.ink, 42.dp)
                         Spacer(Modifier.weight(1f))
-                        if (f.count != null) DotText("${f.count}", size = 26.sp, color = if (f.count > 0) Mx.colors.ink else Mx.colors.tertiaryText)
+                        if (f.count != null) DotText("${f.count}", size = 44.sp, color = if (f.count > 0) Mx.colors.ink else Mx.colors.secondaryText)
                     }
                     Spacer(Modifier.weight(1f))
                     Text(f.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)

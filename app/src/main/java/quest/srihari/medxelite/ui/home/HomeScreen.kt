@@ -12,6 +12,7 @@ import quest.srihari.medxelite.ui.components.DotLine
 import quest.srihari.medxelite.ui.components.DotProgress
 import quest.srihari.medxelite.ui.components.DotRing
 import quest.srihari.medxelite.ui.components.DotText
+import quest.srihari.medxelite.ui.components.DotValue
 import quest.srihari.medxelite.ui.components.IconTile
 import quest.srihari.medxelite.ui.components.MedxLogoMark
 import quest.srihari.medxelite.ui.components.NChip
@@ -158,15 +159,14 @@ fun HomeScreen(nav: Navigator, modifier: Modifier = Modifier, onTab: (Tab) -> Un
                         NWidget(Modifier.weight(1f).fillMaxHeight()) {
                             NLabel("Correct today")
                             Spacer(Modifier.height(14.dp))
-                            DotText("$correct", size = 44.sp)
+                            Spacer(Modifier.weight(1f))
+                            DotText("$correct", size = 64.sp)
                         }
                         NWidget(Modifier.weight(1f).fillMaxHeight()) {
                             NLabel("Accuracy today")
                             Spacer(Modifier.height(14.dp))
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                DotText(if (answered > 0) "${Math.round(correct * 100.0 / answered)}" else "--", size = 44.sp)
-                                if (answered > 0) DotText("%", size = 24.sp, color = Mx.colors.accent, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
-                            }
+                            Spacer(Modifier.weight(1f))
+                            DotValue(if (answered > 0) "${Math.round(correct * 100.0 / answered)}" else "--", if (answered > 0) "%" else null, size = 64.sp, suffixColor = Mx.colors.accent)
                         }
                     }
                 }
@@ -236,7 +236,7 @@ private fun HomeHeader(greeting: String, firstName: String?, session: quest.srih
         Row(verticalAlignment = Alignment.CenterVertically) {
             MedxLogoMark(size = 30.dp, framed = false)
             Spacer(Modifier.width(8.dp))
-            DotText("MEDX", size = 22.sp)
+            DotText("MEDX", size = 26.sp)
             Spacer(Modifier.width(6.dp))
             NLabel("Elite", modifier = Modifier.padding(top = 3.dp))
             Spacer(Modifier.weight(1f))
@@ -295,9 +295,10 @@ private fun GoalWidget(answered: Int, goal: Int, modifier: Modifier) {
     NWidget(modifier) {
         NLabel(if (met) "Goal met" else "Today's goal", color = if (met) Mx.colors.ink else Mx.colors.secondaryText)
         Spacer(Modifier.height(12.dp))
-        DotRing(fraction, Modifier.size(112.dp).align(Alignment.CenterHorizontally), dots = 32, dotSize = 5.5.dp) {
+        DotRing(fraction, Modifier.size(124.dp).align(Alignment.CenterHorizontally), dots = 32, dotSize = 5.5.dp) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                DotText("$answered", size = 32.sp)
+                DotText("$answered", size = 42.sp)
+                Spacer(Modifier.height(4.dp))
                 NLabel("of $goal", size = 10.sp)
             }
         }
@@ -395,10 +396,9 @@ private fun AccuracyCard(points: List<Int>, overall: Int?) {
         Spacer(Modifier.height(10.dp))
         if (overall != null) {
             Row(verticalAlignment = Alignment.Bottom) {
-                DotText("$overall", size = 44.sp)
-                DotText("%", size = 24.sp, color = Mx.colors.accent, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
+                DotValue("$overall", "%", size = 56.sp, suffixColor = Mx.colors.accent)
                 Spacer(Modifier.width(10.dp))
-                NLabel("overall", Modifier.padding(bottom = 8.dp))
+                NLabel("overall", Modifier.padding(bottom = 6.dp))
             }
             Spacer(Modifier.height(12.dp))
         }

@@ -8,6 +8,9 @@ APK="$1"; OUT="$2"
 PKG=quest.srihari.medxelite
 mkdir -p "$OUT"
 adb logcat -c || true
+# Emulator system apps (Pixel Launcher) often raise ANR dialogs on slow CI machines; they sit
+# on top of the app and swallow taps. Hide them, and dismiss any that still appear.
+adb shell settings put global hide_error_dialogs 1 || true
 adb install -r -t "$APK"
 
 tap_text() {
@@ -31,6 +34,13 @@ PY
 
 alive() { adb shell pidof $PKG >/dev/null 2>&1; }
 
+# Tap "Wait" on a system "isn't responding" dialog if one is showing (never on our app's own UI).
+dismiss_anr() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb pull /sdcard/ui.xml "$OUT/ui.xml" >/dev/null 2>&1
+  if grep -q "isn't responding" "$OUT/ui.xml" 2>/dev/null; then echo "system ANR dialog showing; dismissing"; tap_text "Wait"; sleep 2; fi
+}
+
 # 1) Cold launch signed out (sign-in screen).
 adb shell am start -W -n $PKG/.MainActivity
 sleep 6
@@ -49,10 +59,12 @@ adb shell run-as $PKG ls -l shared_prefs
 
 adb shell am start -W -n $PKG/.MainActivity
 sleep 12
+dismiss_anr
 adb exec-out screencap -p > "$OUT/1-home.png"
 alive && echo "ALIVE after home" || echo "DEAD after home"
 i=2
 for t in QBank Tests Classes Library Home; do
+  dismiss_anr
   tap_text "$t"; sleep 6
   adb exec-out screencap -p > "$OUT/$i-$t.png"; i=$((i+1))
   alive && echo "ALIVE after $t" || echo "DEAD after $t"

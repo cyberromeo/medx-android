@@ -46,7 +46,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -118,7 +120,12 @@ fun DotText(
         text,
         modifier = modifier,
         color = color,
-        style = TextStyle(fontFamily = NType.dot, fontWeight = weight, fontSize = size, lineHeight = (size.value * 1.04f).sp, letterSpacing = 0.sp),
+        style = TextStyle(
+            fontFamily = NType.dot, fontWeight = weight, fontSize = size, lineHeight = (size.value * 0.92f).sp, letterSpacing = 0.sp,
+            // Doto has tall ascent padding; trim it so big numerals sit tight in their widgets.
+            platformStyle = PlatformTextStyle(includeFontPadding = false),
+            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
+        ),
         maxLines = maxLines,
         overflow = TextOverflow.Clip,
         softWrap = maxLines > 1,
@@ -347,10 +354,10 @@ fun NChip(text: String, modifier: Modifier = Modifier, inverted: Boolean = false
 
 /** Stat block inside a widget: dot-matrix value over a mono caption. */
 @Composable
-fun DotStat(value: String, label: String, modifier: Modifier = Modifier, size: TextUnit = 34.sp, color: Color = Mx.colors.ink) {
+fun DotStat(value: String, label: String, modifier: Modifier = Modifier, size: TextUnit = 38.sp, color: Color = Mx.colors.ink) {
     Column(modifier) {
         DotText(value, size = size, color = color)
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(8.dp))
         NLabel(label, size = 10.sp)
     }
 }
@@ -511,6 +518,21 @@ fun NSearchField(
             ) {
                 Icon(androidx.compose.material.icons.Icons.Outlined.Close, null, tint = c.secondaryText, modifier = Modifier.size(18.dp))
             }
+        }
+    }
+}
+
+/** A big dot-matrix value with a small mono suffix ("/ 10", "%"), baseline-ish aligned. */
+@Composable
+fun DotValue(value: String, suffix: String?, modifier: Modifier = Modifier, size: TextUnit = 56.sp, suffixColor: Color = Mx.colors.secondaryText, color: Color = Mx.colors.ink) {
+    Row(modifier, verticalAlignment = Alignment.Bottom) {
+        DotText(value, size = size, color = color)
+        if (suffix != null) {
+            Text(
+                suffix, color = suffixColor, maxLines = 1,
+                style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.3f).coerceIn(12f, 22f).sp, letterSpacing = 0.5.sp),
+                modifier = Modifier.padding(start = 6.dp),
+            )
         }
     }
 }

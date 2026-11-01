@@ -190,15 +190,19 @@ fun SignInScreen() {
             Spacer(Modifier.height(40.dp))
             Column(Modifier.widthIn(max = 440.dp).fillMaxWidth().align(Alignment.CenterHorizontally)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MedxLogoMark(size = 56.dp)
+                    MedxLogoMark(size = 64.dp)
                     Spacer(Modifier.width(12.dp))
                     RecDot()
                     Spacer(Modifier.width(8.dp))
                     NLabel("FMGE prep · v${quest.srihari.medxelite.BuildConfig.VERSION_NAME}")
                 }
                 Spacer(Modifier.height(36.dp))
-                DotText("MEDX", size = 76.sp)
-                DotText("ELITE", size = 76.sp, color = c.accent)
+                DotText("MEDX", size = 84.sp)
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    DotText("ELITE", size = 84.sp, color = c.secondaryText)
+                    DotText(".", size = 84.sp, color = c.accent)
+                }
                 Spacer(Modifier.height(14.dp))
                 Text(
                     "Sign in to your MedX account",

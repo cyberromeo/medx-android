@@ -81,7 +81,14 @@ fun FlashcardsScreen(nav: Navigator) {
                 is Load.Failed -> EmptyState("Couldn't load flashcards", s.message, actionTitle = "Try again") { scope.launch { Catalog.loadFlashcards(true) } }
                 is Load.Ready -> androidx.compose.foundation.lazy.LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                     item {
-                        GroupedSection("${s.value.size} subjects · ${s.value.sumOf { it.cardCount }} cards") {
+                        quest.srihari.medxelite.ui.components.NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
+                            quest.srihari.medxelite.ui.components.WidgetHeader("Image decks", trailing = { quest.srihari.medxelite.ui.components.NLabel("${s.value.size} subjects") })
+                            Spacer(Modifier.height(14.dp))
+                            quest.srihari.medxelite.ui.components.DotValue("${s.value.sumOf { it.cardCount }}", "cards", size = 56.sp)
+                        }
+                    }
+                    item {
+                        GroupedSection("Subjects") {
                             s.value.forEachIndexed { i, sub ->
                                 MedxRow(
                                     sub.name, "${sub.cardCount} cards", leading = { SubjectBadge(sub.name) },

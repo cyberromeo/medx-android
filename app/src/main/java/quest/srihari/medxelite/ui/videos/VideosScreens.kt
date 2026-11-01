@@ -131,9 +131,9 @@ fun VideosScreen(nav: Navigator, modifier: Modifier = Modifier) {
                                 WidgetHeader("Recorded classes")
                                 Spacer(Modifier.height(14.dp))
                                 Row(Modifier.fillMaxWidth()) {
-                                    DotStat("${all.size}", "classes", Modifier.weight(1f), size = 30.sp)
-                                    DotStat("${all.sumOf { it.durationSeconds ?: 0 } / 3600}h", "of video", Modifier.weight(1f), size = 30.sp)
-                                    DotStat("$watched", "watched", Modifier.weight(1f), size = 30.sp)
+                                    DotStat("${all.size}", "classes", Modifier.weight(1f))
+                                    DotStat("${all.sumOf { it.durationSeconds ?: 0 } / 3600}h", "of video", Modifier.weight(1f))
+                                    DotStat("$watched", "watched", Modifier.weight(1f))
                                 }
                             }
                         }
@@ -152,7 +152,7 @@ fun VideosScreen(nav: Navigator, modifier: Modifier = Modifier) {
                                         val watched = vids.count { v -> history.any { it.video.id == v.id && it.isCompleted } }
                                         MedxRow(
                                             title = subject,
-                                            subtitle = "${vids.size} classes · ${hours(vids.sumOf { it.durationSeconds ?: 0 })}" + if (watched > 0) " · $watched watched" else "",
+                                            subtitle = "${vids.size} class${if (vids.size == 1) "" else "es"} · ${hours(vids.sumOf { it.durationSeconds ?: 0 })}" + if (watched > 0) " · $watched watched" else "",
                                             leading = { SubjectBadge(subject) },
                                             divider = i < list.size - 1,
                                         ) { nav.openVideoGroup(subject, vids) }

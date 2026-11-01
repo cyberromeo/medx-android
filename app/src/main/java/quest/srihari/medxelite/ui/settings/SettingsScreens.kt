@@ -133,9 +133,9 @@ fun SettingsScreen(nav: Navigator) {
                     DotDivider()
                     Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth()) {
-                        DotStat("${stats.sittings}", "sittings", Modifier.weight(1f), size = 26.sp)
-                        DotStat(stats.overallAccuracy?.let { "$it%" } ?: "--", "accuracy", Modifier.weight(1f), size = 26.sp)
-                        DotStat("${stats.streakDays}", "day streak", Modifier.weight(1f), size = 26.sp)
+                        DotStat("${stats.sittings}", "sittings", Modifier.weight(1f), size = 34.sp)
+                        DotStat(stats.overallAccuracy?.let { "$it%" } ?: "--", "accuracy", Modifier.weight(1f), size = 34.sp)
+                        DotStat("${stats.streakDays}", "day streak", Modifier.weight(1f), size = 34.sp)
                     }
                 }
             }
@@ -297,10 +297,7 @@ fun SyllabusTrackerScreen(nav: Navigator) {
                 NWidget(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth()) {
                     WidgetHeader("Syllabus", trailing = { NLabel("${subjects.size} subjects") })
                     Spacer(Modifier.height(10.dp))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        DotText("$done", size = 52.sp)
-                        DotText("/$total", size = 24.sp, color = Mx.colors.tertiaryText, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
-                    }
+                    quest.srihari.medxelite.ui.components.DotValue("$done", "/ $total", size = 56.sp)
                     Spacer(Modifier.height(10.dp))
                     DotProgress(done.toFloat() / maxOf(total, 1), dots = 32, dotSize = 5.dp)
                     Spacer(Modifier.height(10.dp))
