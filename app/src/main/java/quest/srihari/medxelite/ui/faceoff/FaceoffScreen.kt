@@ -141,6 +141,7 @@ fun FaceoffScreen(nav: Navigator) {
                     Spacer(Modifier.height(10.dp))
                     Spacer(Modifier.height(8.dp))
                     quest.srihari.medxelite.ui.components.DotValue("60", "sec / question", size = 72.sp)
+                    Spacer(Modifier.height(14.dp))
                     Spacer(Modifier.height(6.dp))
                     Text("Duel any MedX friend", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(2.dp))

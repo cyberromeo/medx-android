@@ -550,7 +550,7 @@ fun DotValue(value: String, suffix: String?, modifier: Modifier = Modifier, size
         if (suffix != null) {
             Text(
                 suffix, color = suffixColor, maxLines = 1,
-                style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.3f).coerceIn(12f, 22f).sp, letterSpacing = 0.5.sp),
+                style = TextStyle(fontFamily = NType.mono, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.3f).coerceIn(12f, 16f).sp, letterSpacing = 0.5.sp),
                 modifier = Modifier.alignByBaseline().padding(start = 6.dp),
             )
         }

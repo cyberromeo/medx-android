@@ -158,7 +158,7 @@ fun SittingReview(
                         if (gradable) DotStat(if (attempted > 0) "${Math.round(score * 100.0 / attempted)}%" else "--", "accuracy", Modifier.weight(1f), size = 34.sp)
                         Column(Modifier.weight(1f)) {
                             DotValue("${elapsedSeconds / 60}", "m ${"%02d".format(elapsedSeconds % 60)}s", size = 34.sp)
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(4.dp))
                             NLabel("time", size = 10.sp)
                         }
                     }
